@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>StravaChroma</title>
+  <script>
+    // GitHub Pages SPA redirect hack.
+    // When GH Pages 404s on a deep path (e.g. /editor), this page saves the
+    // intended path in sessionStorage and redirects to the root index.html,
+    // which then restores the path via history.replaceState so the SPA router
+    // picks it up correctly.
+    sessionStorage.setItem('spa-redirect', location.pathname + location.search + location.hash);
+    location.replace('/StravaChroma/');
+  </script>
+</head>
+<body></body>
+</html>

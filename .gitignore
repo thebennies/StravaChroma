@@ -1,0 +1,73 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+dist-ssr/
+storybook-static/
+
+# Environment
+.env
+.env.*
+.env.local
+.env.*.local
+.local/
+
+# Vite
+*.local
+.vite/
+vite.config.*.timestamp-*
+
+# Test coverage
+coverage/
+.vitest/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Package manager artifacts
+.npmrc
+package-lock.json
+yarn.lock
+
+# TypeScript
+*.tsbuildinfo
+
+# Deployment
+.vercel/
+.netlify/
+.cloudflare/
+
+# OS
+.DS_Store
+**/.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Editors
+.vscode/
+.idea/
+.cursor/
+.windsurf/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Security
+*.pem
+*.key
+*.cert
+*.p12
+
+# Claude Code
+.claude/

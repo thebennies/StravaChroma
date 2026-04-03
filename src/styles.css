@@ -1,0 +1,200 @@
+@import "@fontsource-variable/inter";
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0D0D0D;
+  --color-surface: #1A1A1A;
+  --color-surface-variant: #242424;
+  --color-border: #2A2A2A;
+  --color-primary: #FF6B00;
+  --color-primary-light: #FF8533;
+  --color-primary-dark: #CC5500;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #8A8A8A;
+  --color-text-muted: #5A5A5A;
+  --color-success: #34C759;
+  --color-error: #FF3B30;
+  --color-warning: #FF9500;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-slide-up: slide-up 0.3s ease-out;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+  }
+
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .card {
+    background-color: var(--color-surface);
+    border-radius: 16px;
+  }
+
+  .card-sm {
+    background-color: var(--color-surface);
+    border-radius: 12px;
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: #fff;
+    border-radius: 12px;
+    font-weight: 700;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-primary-light);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #F04A00 0%, #C0349A 55%, #7B2FBE 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .btn-gradient {
+    background: linear-gradient(135deg, #F04A00 0%, #C0349A 55%, #7B2FBE 100%);
+    color: #fff;
+    border-radius: 12px;
+    font-weight: 700;
+    transition: filter 0.2s ease, transform 0.1s ease;
+  }
+
+  .btn-gradient:hover {
+    filter: brightness(1.12);
+  }
+
+  .btn-gradient:active {
+    transform: scale(0.98);
+  }
+
+  .btn-secondary {
+    background-color: var(--color-surface-variant);
+    color: var(--color-text-primary);
+    border-radius: 12px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--color-border);
+  }
+
+  .orange-arc {
+    border: 3px solid var(--color-primary);
+    border-radius: 50%;
+    opacity: 0.3;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
+@layer components {
+  /* Range slider — shared base */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 10px;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+    border: none;
+  }
+
+  /* Gradient track — background set via --track-gradient JS variable */
+  input[type="range"].slider-gradient::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 5px;
+    background: var(--track-gradient, var(--color-surface-variant));
+  }
+
+  input[type="range"].slider-gradient::-moz-range-track {
+    height: 10px;
+    border-radius: 5px;
+    background: var(--track-gradient, var(--color-surface-variant));
+  }
+
+  /* White thumb with shadow */
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    background: #ffffff;
+    cursor: pointer;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.15);
+    margin-top: -6px;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    background: #ffffff;
+    cursor: pointer;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.15);
+  }
+
+  /* Hide number input spin buttons */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
