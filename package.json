@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
-    "lucide": "^1.7.0",
+    "lucide": "^1.8.0",
     "posthog-js": "^1.367.0"
   }
 }
