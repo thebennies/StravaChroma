@@ -578,6 +578,7 @@ function setupEditor() {
   prevHasImage = false;
   prevCheckerShow = false;
   prevCheckerDark = false;
+  prevDropShadowEnabled = false;
 
   const controlsResult = buildControls(
     layout.controlsContainer,

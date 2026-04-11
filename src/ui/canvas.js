@@ -159,6 +159,11 @@ export function setRenderSpinner(visible) {
   if (renderSpinner) renderSpinner.classList.toggle('hidden', !visible);
 }
 
+/**
+ * Applies a CSS drop-shadow filter to the preview canvas.
+ * Note: This is a CSS-only visual effect for the preview. Exported images
+ * use an offscreen canvas and won't include this shadow (by design).
+ */
 export function setDropShadow(enabled) {
   if (!canvas) return;
   if (enabled) {
