@@ -1,5 +1,42 @@
 import { PRESETS, COLORWAYS, DEFAULT_DATA_PRESET, DEFAULT_LABEL_PRESET } from '../constants.js';
-import { createIcons, Shuffle, ListRestart, RotateCw, Layers } from 'lucide';
+import { createIcons, Shuffle, ListRestart, RotateCw, Layers, X } from 'lucide';
+
+const GROUP_SELECTION_KEY = 'stravachroma-selected-groups';
+// Extract unique groups and sort with Mono at the end
+const UNIQUE_GROUPS = [...new Set(COLORWAYS.map(cw => cw.group))];
+const MANDATORY_GROUP = 'Mono';
+const ALL_GROUPS = [
+  ...UNIQUE_GROUPS.filter(g => g !== MANDATORY_GROUP),
+  MANDATORY_GROUP
+];
+
+function getSavedGroupSelection() {
+  try {
+    const saved = localStorage.getItem(GROUP_SELECTION_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Guard against non-array JSON
+      if (!Array.isArray(parsed)) return [...ALL_GROUPS];
+      // Always ensure Mono is included
+      if (!parsed.includes(MANDATORY_GROUP)) {
+        parsed.unshift(MANDATORY_GROUP);
+      }
+      return parsed;
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+  // Default: all groups selected
+  return [...ALL_GROUPS];
+}
+
+function saveGroupSelection(selectedGroups) {
+  try {
+    localStorage.setItem(GROUP_SELECTION_KEY, JSON.stringify(selectedGroups));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
 
 /**
  * Builds the controls DOM and returns wiring callbacks.
@@ -50,7 +87,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
   const desktopColorwaysHeading = document.createElement('p');
   desktopColorwaysHeading.className = 'px-5 pt-4 pb-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
   desktopColorwaysHeading.textContent = 'Colorways';
-  const { el: desktopColorwaysInner, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { onRandom, onSwap });
+  const { el: desktopColorwaysInner, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { onSwap, signal });
   desktopColorwaysSection.appendChild(desktopColorwaysHeading);
   desktopColorwaysSection.appendChild(desktopColorwaysInner);
 
@@ -60,7 +97,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
   container.appendChild(dataSection.el);
   container.appendChild(mapSection.el);
 
-  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers } });
+  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers, X } });
 
   function setEnabled(enabled) {
     container.style.display = enabled ? '' : 'none';
@@ -120,7 +157,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
 
   // Build panels
   const actionsPanel = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage });
-  const { el: colorwaysPanel, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { mobile: true, onRandom, onSwap });
+  const { el: colorwaysPanel, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { mobile: true, onSwap, signal });
 
   // Manual panel — stacks Label, Data, Map sections vertically with headings intact
   const manualPanel = document.createElement('div');
@@ -134,9 +171,9 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
   manualPanel.appendChild(manualBottomSpacer);
 
   const tabDefs = [
-    { id: 'actions',   label: 'Actions',   panel: actionsPanel },
     { id: 'colorways', label: 'Colorways', panel: colorwaysPanel },
     { id: 'manual',    label: 'Manual',    panel: manualPanel },
+    { id: 'actions',   label: 'Actions',   panel: actionsPanel },
   ];
 
   // Mount all panels absolutely inside panelArea — they fill the area exactly
@@ -197,9 +234,9 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
   container.appendChild(panelArea);
 
   // Activate default tab
-  activateTab('actions');
+  activateTab('colorways');
 
-  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers } });
+  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers, X } });
 
   function setEnabled(enabled) {
     container.style.display = enabled ? 'flex' : 'none';
@@ -663,12 +700,32 @@ function buildPresetRow(layer, initialIndex, onChange) {
   return { el: row, setValue };
 }
 
-function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onRandom, onSwap } = {}) {
+function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSwap, signal } = {}) {
   const panel = document.createElement('div');
   panel.className = 'flex flex-col';
   if (mobile) {
-    // panel is absolutely positioned by buildMobileTabs — just ensure overflow is hidden
     panel.style.overflow = 'hidden';
+  }
+
+  // Get selected groups from localStorage
+  let selectedGroups = getSavedGroupSelection();
+
+  // Filter colorways based on selected groups
+  function getFilteredColorways() {
+    return colorwayPresets
+      .filter(cw => selectedGroups.includes(cw.group))
+      .sort((a, b) => {
+        const aIsMono = a.group === MANDATORY_GROUP;
+        const bIsMono = b.group === MANDATORY_GROUP;
+        if (aIsMono === bIsMono) return 0;
+        return aIsMono ? 1 : -1;
+      });
+  }
+
+  // Build filtered colorways list
+  let filteredColorways = getFilteredColorways();
+  function refreshFilteredColorways() {
+    filteredColorways = getFilteredColorways();
   }
 
   // Prev / Next nav bar
@@ -694,8 +751,11 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onRa
   shuffleBtn.setAttribute('aria-label', 'Shuffle colors randomly');
   shuffleBtn.innerHTML = `<i data-lucide="shuffle" class="w-4 h-4 flex-shrink-0"></i>`;
   shuffleBtn.addEventListener('click', () => {
-    const randomIdx = Math.floor(Math.random() * colorwayPresets.length);
-    onColorway(randomIdx);
+    if (filteredColorways.length === 0) return;
+    const randomFilteredIdx = Math.floor(Math.random() * filteredColorways.length);
+    const selectedColorway = filteredColorways[randomFilteredIdx];
+    const originalIdx = colorwayPresets.indexOf(selectedColorway);
+    onColorway(originalIdx);
   });
 
   const cycleBtn = document.createElement('button');
@@ -706,7 +766,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onRa
 
   const groupBtn = document.createElement('button');
   groupBtn.className = navBtnClass();
-  groupBtn.setAttribute('aria-label', 'Jump to next group');
+  groupBtn.setAttribute('aria-label', 'Select groups to display');
   groupBtn.innerHTML = `<i data-lucide="layers" class="w-4 h-4 flex-shrink-0"></i>`;
 
   navBtns.appendChild(groupBtn);
@@ -736,84 +796,245 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onRa
   const items = [];
   let currentGroup = null;
 
-  // Group scroll targets: { group, el } — el is the header p element, null means scroll to top (first group)
-  const groupScrollTargets = [];
-  let currentGroupScrollIdx = 0;
+  function renderList() {
+    // Clear existing items
+    list.innerHTML = '';
+    items.length = 0;
+    currentGroup = null;
 
-  colorwayPresets.forEach((colorway, idx) => {
-    if (colorway.group !== currentGroup) {
-      if (currentGroup === null) {
-        // First group — no header rendered, scroll target is top of list
-        groupScrollTargets.push({ group: colorway.group, el: null });
-      } else {
+    filteredColorways.forEach((colorway, filteredIdx) => {
+      const originalIdx = colorwayPresets.indexOf(colorway);
+
+      if (colorway.group !== currentGroup) {
         const groupHeader = document.createElement('p');
         groupHeader.className = 'mt-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
         groupHeader.textContent = colorway.group;
         list.appendChild(groupHeader);
-        groupScrollTargets.push({ group: colorway.group, el: groupHeader });
+        currentGroup = colorway.group;
       }
-      currentGroup = colorway.group;
-    }
 
-    const item = document.createElement('button');
-    item.className = colorwayItemClass(false);
-    item.setAttribute('aria-label', `Apply ${colorway.name} colorway`);
+      const item = document.createElement('button');
+      item.className = colorwayItemClass(false);
+      item.setAttribute('aria-label', `Apply ${colorway.name} colorway`);
 
-    const nameEl = document.createElement('span');
-    nameEl.className = 'text-sm font-medium';
-    nameEl.textContent = colorway.name;
+      const nameEl = document.createElement('span');
+      nameEl.className = 'text-sm font-medium';
+      nameEl.textContent = colorway.name;
 
-    const swatches = document.createElement('div');
-    swatches.className = 'flex gap-1 flex-shrink-0';
-    [
-      { layer: colorway.label, title: 'Label' },
-      { layer: colorway.data,  title: 'Data' },
-      { layer: colorway.map,   title: 'Map' },
-    ].forEach(({ layer, title }) => {
-      const dot = document.createElement('span');
-      dot.className = 'w-4 h-4 rounded-sm border border-white/20 flex-shrink-0';
-      dot.style.backgroundColor = swatchColor(layer.hue, layer.sat, layer.luminance);
-      dot.title = title;
-      swatches.appendChild(dot);
+      const swatches = document.createElement('div');
+      swatches.className = 'flex gap-1 flex-shrink-0';
+      [
+        { layer: colorway.label, title: 'Label' },
+        { layer: colorway.data,  title: 'Data' },
+        { layer: colorway.map,   title: 'Map' },
+      ].forEach(({ layer, title }) => {
+        const dot = document.createElement('span');
+        dot.className = 'w-4 h-4 rounded-sm border border-white/20 flex-shrink-0';
+        dot.style.backgroundColor = swatchColor(layer.hue, layer.sat, layer.luminance);
+        dot.title = title;
+        swatches.appendChild(dot);
+      });
+
+      item.appendChild(nameEl);
+      item.appendChild(swatches);
+      item.addEventListener('click', () => onColorway(originalIdx));
+      list.appendChild(item);
+      items.push({ el: item, originalIdx });
     });
 
-    item.appendChild(nameEl);
-    item.appendChild(swatches);
-    item.addEventListener('click', () => onColorway(idx));
-    list.appendChild(item);
-    items.push(item);
-  });
+    // Restore active state if still visible
+    if (activeIdx >= 0) {
+      const matching = items.find(i => i.originalIdx === activeIdx);
+      if (matching) {
+        activeEl = matching.el;
+        activeEl.className = colorwayItemClass(true);
+      } else {
+        activeEl = null;
+      }
+    }
+  }
+
+  renderList();
 
   prevBtn.addEventListener('click', () => {
-    const next = activeIdx <= 0 ? colorwayPresets.length - 1 : activeIdx - 1;
-    onColorway(next);
+    if (filteredColorways.length === 0) return;
+    const currentFilteredIdx = items.findIndex(i => i.originalIdx === activeIdx);
+    const newFilteredIdx = currentFilteredIdx <= 0 ? filteredColorways.length - 1 : currentFilteredIdx - 1;
+    const newOriginalIdx = items[newFilteredIdx]?.originalIdx ?? colorwayPresets.indexOf(filteredColorways[0]);
+    onColorway(newOriginalIdx);
   });
 
   nextBtn.addEventListener('click', () => {
-    const next = activeIdx >= colorwayPresets.length - 1 ? 0 : activeIdx + 1;
-    onColorway(next);
+    if (filteredColorways.length === 0) return;
+    const currentFilteredIdx = items.findIndex(i => i.originalIdx === activeIdx);
+    const newFilteredIdx = currentFilteredIdx >= filteredColorways.length - 1 ? 0 : currentFilteredIdx + 1;
+    const newOriginalIdx = items[newFilteredIdx]?.originalIdx ?? colorwayPresets.indexOf(filteredColorways[0]);
+    onColorway(newOriginalIdx);
   });
 
-  groupBtn.addEventListener('click', () => {
-    if (groupScrollTargets.length === 0) return;
-    currentGroupScrollIdx = (currentGroupScrollIdx + 1) % groupScrollTargets.length;
-    const target = groupScrollTargets[currentGroupScrollIdx];
-    if (!target.el) {
-      list.scrollTo({ top: 0, behavior: 'smooth' });
+  // Group selection modal
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
+  modalOverlay.style.display = 'none';
+
+  const modalContent = document.createElement('div');
+  modalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[60vh]';
+
+  // Modal header
+  const modalHeader = document.createElement('div');
+  modalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
+
+  const modalTitle = document.createElement('h3');
+  modalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
+  modalTitle.innerHTML = `<i data-lucide="layers" class="w-4 h-4 flex-shrink-0"></i><span>Colorway Groups</span>`;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
+  closeBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
+  closeBtn.setAttribute('aria-label', 'Close modal');
+  closeBtn.addEventListener('click', () => {
+    modalOverlay.style.display = 'none';
+  });
+
+  modalHeader.appendChild(modalTitle);
+  modalHeader.appendChild(closeBtn);
+
+  // Select all / Deselect all buttons
+  const modalActions = document.createElement('div');
+  modalActions.className = 'flex gap-2 px-4 py-2';
+
+  const selectAllBtn = document.createElement('button');
+  selectAllBtn.className = 'flex-1 px-3 py-1.5 text-xs font-medium bg-surface-variant border border-border rounded-lg hover:border-primary transition-colors';
+  selectAllBtn.textContent = 'All';
+
+  const deselectAllBtn = document.createElement('button');
+  deselectAllBtn.className = 'flex-1 px-3 py-1.5 text-xs font-medium bg-surface-variant border border-border rounded-lg hover:border-primary transition-colors';
+  deselectAllBtn.textContent = 'Minimal';
+
+  modalActions.appendChild(selectAllBtn);
+  modalActions.appendChild(deselectAllBtn);
+
+  // Group list
+  const groupList = document.createElement('div');
+  groupList.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2';
+
+  const groupCheckboxes = [];
+
+  ALL_GROUPS.forEach(group => {
+    const isMandatory = group === MANDATORY_GROUP;
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-surface-variant cursor-pointer';
+
+    const checkbox = document.createElement('div');
+    checkbox.className = `w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+      isMandatory
+        ? 'bg-primary border-primary cursor-not-allowed'
+        : 'border-border bg-surface'
+    }`;
+
+    const checkIcon = document.createElement('span');
+    checkIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    checkIcon.className = isMandatory ? 'text-white' : 'text-white opacity-0';
+
+    checkbox.appendChild(checkIcon);
+
+    const label = document.createElement('span');
+    label.className = 'text-sm text-text-primary flex-1';
+    label.textContent = group;
+
+    if (isMandatory) {
+      const mandatoryBadge = document.createElement('span');
+      mandatoryBadge.className = 'text-xs text-text-muted';
+      mandatoryBadge.textContent = 'Required';
+      row.appendChild(checkbox);
+      row.appendChild(label);
+      row.appendChild(mandatoryBadge);
     } else {
-      const elRect = target.el.getBoundingClientRect();
-      const listRect = list.getBoundingClientRect();
-      list.scrollBy({ top: elRect.top - listRect.top, behavior: 'smooth' });
+      row.appendChild(checkbox);
+      row.appendChild(label);
+    }
+
+    function updateCheckbox() {
+      const isChecked = selectedGroups.includes(group);
+      if (isChecked) {
+        checkbox.classList.remove('border-border', 'bg-surface');
+        checkbox.classList.add('bg-primary', 'border-primary');
+        checkIcon.classList.remove('opacity-0');
+      } else {
+        checkbox.classList.add('border-border', 'bg-surface');
+        checkbox.classList.remove('bg-primary', 'border-primary');
+        checkIcon.classList.add('opacity-0');
+      }
+    }
+
+    row.addEventListener('click', () => {
+      if (isMandatory) return;
+      if (selectedGroups.includes(group)) {
+        selectedGroups = selectedGroups.filter(g => g !== group);
+      } else {
+        selectedGroups = [...selectedGroups, group];
+      }
+      saveGroupSelection(selectedGroups);
+      updateCheckbox();
+      refreshFilteredColorways();
+      renderList();
+    });
+
+    groupCheckboxes.push({ group, updateCheckbox });
+    groupList.appendChild(row);
+  });
+
+  // Select All / Deselect All handlers
+  selectAllBtn.addEventListener('click', () => {
+    selectedGroups = [...ALL_GROUPS];
+    saveGroupSelection(selectedGroups);
+    groupCheckboxes.forEach(({ updateCheckbox }) => updateCheckbox());
+    refreshFilteredColorways();
+    renderList();
+  });
+
+  deselectAllBtn.addEventListener('click', () => {
+    selectedGroups = [MANDATORY_GROUP]; // Keep only mandatory group
+    saveGroupSelection(selectedGroups);
+    groupCheckboxes.forEach(({ updateCheckbox }) => updateCheckbox());
+    refreshFilteredColorways();
+    renderList();
+  });
+
+  // Close modal on overlay click
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+      modalOverlay.style.display = 'none';
     }
   });
 
+  // Close modal on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalOverlay.style.display !== 'none') {
+      modalOverlay.style.display = 'none';
+    }
+  }, signal ? { signal } : undefined);
+
+  modalContent.appendChild(modalHeader);
+  modalContent.appendChild(modalActions);
+  modalContent.appendChild(groupList);
+  modalOverlay.appendChild(modalContent);
   panel.appendChild(navBar);
   panel.appendChild(list);
+  panel.appendChild(modalOverlay);
+
+  // Open modal on group button click
+  groupBtn.addEventListener('click', () => {
+    // Refresh checkboxes state
+    groupCheckboxes.forEach(({ group, updateCheckbox }) => updateCheckbox());
+    modalOverlay.style.display = 'flex';
+  });
 
   function setActive(idx) {
     if (activeEl) activeEl.className = colorwayItemClass(false);
     activeIdx = idx;
-    activeEl = idx >= 0 ? items[idx] ?? null : null;
+    const matching = items.find(i => i.originalIdx === idx);
+    activeEl = matching?.el ?? null;
     if (activeEl) {
       activeEl.className = colorwayItemClass(true);
       activeEl.scrollIntoView({ block: 'nearest' });
