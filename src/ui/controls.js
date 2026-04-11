@@ -171,9 +171,9 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
   manualPanel.appendChild(manualBottomSpacer);
 
   const tabDefs = [
-    { id: 'actions',   label: 'Actions',   panel: actionsPanel },
     { id: 'colorways', label: 'Colorways', panel: colorwaysPanel },
     { id: 'manual',    label: 'Manual',    panel: manualPanel },
+    { id: 'actions',   label: 'Actions',   panel: actionsPanel },
   ];
 
   // Mount all panels absolutely inside panelArea — they fill the area exactly
@@ -234,7 +234,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
   container.appendChild(panelArea);
 
   // Activate default tab
-  activateTab('actions');
+  activateTab('colorways');
 
   createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers, X } });
 
