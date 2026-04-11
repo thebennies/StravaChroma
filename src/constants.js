@@ -91,7 +91,7 @@ export const COLORWAYS = [
     label: { hue: 0, sat: 0.0, luminance: 1.00 },
   },
   {
-    name:  "Asics Digital Aqua & Marigold",
+    name:  "Asics Digital Aqua Marigold",
     group: 'Running',
     data:  { hue: 195, sat: 1.0, luminance: 0.50 },
     map:   { hue: 40, sat: 1.0, luminance: 0.50 },
@@ -112,7 +112,7 @@ export const COLORWAYS = [
     label: { hue: 0, sat: 0.0, luminance: 0.00 },
   },
   {
-    name:  "Asics Island Blue & Orange Pop",
+    name:  "Asics Island Blue Orange Pop",
     group: 'Running',
     data:  { hue: 210, sat: 1.0, luminance: 0.40 },
     map:   { hue: 25, sat: 1.0, luminance: 0.50 },
@@ -147,7 +147,7 @@ export const COLORWAYS = [
     label: { hue: 207, sat: 0.1, luminance: 0.61 },
   },
   {
-    name:  "Brooks Peacoat & Atomic Blue",
+    name:  "Brooks Peacoat Atomic Blue",
     group: 'Running',
     data:  { hue: 218, sat: 0.4, luminance: 0.13 },
     map:   { hue: 197, sat: 1.0, luminance: 0.45 },
@@ -1917,7 +1917,7 @@ export const COLORWAYS = [
     label: { hue: 0,   sat: 0.0,  luminance: 0.07 },
   },
   {
-    name:  "Nike Blazer Mid Vintage White",
+    name:  "Nike Blazer Vintage White",
     group: 'Sneakers',
     map:   { hue: 0,   sat: 0.0,  luminance: 0.96 },
     data:  { hue: 0,   sat: 0.0,  luminance: 0.07 },
@@ -1963,8 +1963,8 @@ export const COLORWAYS = [
   {
     name:  "Kopi Tuku",
     group: 'Kopi',
-    data:  { hue: 28,  sat: 0.78, luminance: 0.57 },
-    map:   { hue: 25,  sat: 0.28, luminance: 0.33 },
+    data:  { hue: 25,  sat: 0.28, luminance: 0.33 },
+    map:   { hue: 28,  sat: 0.78, luminance: 0.57 },
     label: { hue: 38,  sat: 0.45, luminance: 0.89 },
   },
   {
@@ -2054,7 +2054,7 @@ export const COLORWAYS = [
     label: { hue: 44,  sat: 0.74, luminance: 0.68 },
   },
   {
-    name:  "DC Batman Classic Dark Knight",
+    name:  "DC Batman Dark Knight",
     group: 'Comics',
     data:  { hue: 210, sat: 0.12, luminance: 0.08 },
     map:   { hue: 215, sat: 0.25, luminance: 0.38 },
@@ -2152,14 +2152,14 @@ export const COLORWAYS = [
     label: { hue: 0,   sat: 0.0,  luminance: 0.95 },
   },
   {
-    name:  "Image Spawn Hellspawn Classic",
+    name:  "Image Spawn Classic",
     group: 'Comics',
     data:  { hue: 240, sat: 0.25, luminance: 0.08 },
     map:   { hue: 345, sat: 0.85, luminance: 0.44 },
     label: { hue: 0,   sat: 0.0,  luminance: 0.94 },
   },
   {
-    name:  "Image Spawn Red-Black-Green Symbiote",
+    name:  "Image Spawn Symbiote",
     group: 'Comics',
     data:  { hue: 240, sat: 0.25, luminance: 0.08 },
     map:   { hue: 345, sat: 0.85, luminance: 0.44 },
