@@ -120,7 +120,7 @@
     background-color: var(--color-border);
   }
 
-  .orange-arc {
+  .primary-arc {
     border: 3px solid var(--color-primary);
     border-radius: 50%;
     opacity: 0.3;
