@@ -8,11 +8,12 @@ const RETRY_DELAY_MS = 500;
  * @param {Uint8ClampedArray} pixelData  — rendered RGBA at full resolution
  * @param {number} width
  * @param {number} height
+ * @param {boolean} [dropShadowEnabled] — whether to apply drop shadow effect
  * @param {number} [retryCount] — internal retry counter
  */
-export async function downloadExport(pixelData, width, height, retryCount = 0) {
+export async function downloadExport(pixelData, width, height, dropShadowEnabled = false, retryCount = 0) {
   try {
-    await attemptDownload(pixelData, width, height);
+    await attemptDownload(pixelData, width, height, dropShadowEnabled);
     toast.success('Image saved successfully!');
   } catch (err) {
     console.error(`Export attempt ${retryCount + 1} failed:`, err);
@@ -20,7 +21,7 @@ export async function downloadExport(pixelData, width, height, retryCount = 0) {
     if (retryCount < MAX_RETRIES) {
       toast.warning('Retrying export...');
       await delay(RETRY_DELAY_MS * (retryCount + 1)); // Exponential backoff
-      return downloadExport(pixelData, width, height, retryCount + 1);
+      return downloadExport(pixelData, width, height, dropShadowEnabled, retryCount + 1);
     }
     
     toast.error('Export failed after multiple attempts. Please try again.');
@@ -31,7 +32,7 @@ export async function downloadExport(pixelData, width, height, retryCount = 0) {
 /**
  * Internal download attempt
  */
-async function attemptDownload(pixelData, width, height) {
+async function attemptDownload(pixelData, width, height, dropShadowEnabled = false) {
   const hiddenCanvas = document.createElement('canvas');
   hiddenCanvas.width = width;
   hiddenCanvas.height = height;
@@ -42,7 +43,21 @@ async function attemptDownload(pixelData, width, height) {
   }
 
   const imageData = new ImageData(pixelData, width, height);
-  ctx.putImageData(imageData, 0, 0);
+
+  if (dropShadowEnabled) {
+    // putImageData bypasses ctx.filter, so we must composite via drawImage:
+    // 1. Write raw pixels onto a temporary canvas
+    // 2. Draw that canvas onto the export canvas with the filter applied
+    const tmp = document.createElement('canvas');
+    tmp.width = width;
+    tmp.height = height;
+    tmp.getContext('2d').putImageData(imageData, 0, 0);
+    ctx.filter = 'drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5))';
+    ctx.drawImage(tmp, 0, 0);
+    ctx.filter = 'none';
+  } else {
+    ctx.putImageData(imageData, 0, 0);
+  }
 
   const blob = await new Promise((resolve, reject) => {
     hiddenCanvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob returned null')), 'image/png');

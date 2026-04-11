@@ -159,6 +159,19 @@ export function setRenderSpinner(visible) {
   if (renderSpinner) renderSpinner.classList.toggle('hidden', !visible);
 }
 
+/**
+ * Applies a CSS drop-shadow filter to the preview canvas.
+ * The same filter is applied during export via canvas context filter.
+ */
+export function setDropShadow(enabled) {
+  if (!canvas) return;
+  if (enabled) {
+    canvas.style.filter = 'drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5))';
+  } else {
+    canvas.style.filter = '';
+  }
+}
+
 function clampScale(s) {
   return Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
 }

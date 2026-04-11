@@ -73,7 +73,7 @@ function saveGroupSelection(selectedGroups) {
  * On mobile: renders a tab bar (TOOLS | MAP | DATA | LABEL) with Save button in the tab bar.
  * On desktop: renders all sections stacked (unchanged).
  */
-export function buildControls(container, { isMobile, onSliderChange, onPresetChange, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground = 'auto', initialCustomImage = null, signal }) {
+export function buildControls(container, { isMobile, onSliderChange, onPresetChange, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, onDropShadowChange, initialBackground = 'auto', initialCustomImage = null, initialDropShadow = false, signal }) {
   container.innerHTML = '';
 
   const mapSection = buildLayerSection('Map / Route', 'map', {
@@ -109,7 +109,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
 
   // ── Desktop: all sections stacked ──────────────────────────────────────────
 
-  const randomWrapper = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage });
+  const randomWrapper = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow });
   randomWrapper.classList.add('border-b', 'border-border');
 
   const desktopColorwaysSection = document.createElement('div');
@@ -151,7 +151,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
 
 // ── Mobile tab layout ─────────────────────────────────────────────────────────
 
-function buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, signal }) {
+function buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, signal }) {
   // Make container a flex column — panels will live in an absolutely-positioned area
   container.style.display = 'flex';
   container.style.flexDirection = 'column';
@@ -186,7 +186,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
   panelArea.style.overflow = 'hidden';
 
   // Build panels
-  const actionsPanel = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage });
+  const actionsPanel = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow });
   const { el: colorwaysPanel, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { mobile: true, onSwap, signal });
 
   // Manual panel — stacks Label, Data, Map sections vertically with headings intact
@@ -311,6 +311,7 @@ const SVG_IMG  = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
 const SVG_X    = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
 const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
 const SVG_HEART_OUTLINE =`<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
+const SVG_SHADOW = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5a6 6 0 0 0-6 6v6h12v-6a6 6 0 0 0-6-6Z"/><path d="M6 17v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1" opacity="0.5"/><path d="M8 20v2" opacity="0.3"/><path d="M12 20v2" opacity="0.3"/><path d="M16 20v2" opacity="0.3"/></svg>`;
 const SVG_HEART_FILLED  = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
 
 function bgCardClass(active) {
@@ -324,7 +325,7 @@ function bgCardClass(active) {
   ].join(' ');
 }
 
-function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground = 'auto', initialCustomImage = null } = {}) {
+function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground = 'auto', initialCustomImage = null, onDropShadowChange, initialDropShadow = false } = {}) {
   const panel = document.createElement('div');
   panel.appendChild(buildActionGrid([
     {
@@ -456,6 +457,47 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
 
   // Set initial state
   updateCards();
+
+  // ── Effects sub-section ─────────────────────────────────────────────────────
+
+  let localDropShadow = initialDropShadow;
+
+  const effectsSeparator = document.createElement('div');
+  effectsSeparator.className = 'border-t border-border mx-4';
+
+  const effectsHeading = document.createElement('p');
+  effectsHeading.className = 'px-4 pt-3 pb-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
+  effectsHeading.textContent = 'Effects';
+
+  const effectsGrid = document.createElement('div');
+  effectsGrid.className = 'grid grid-cols-4 gap-2 px-4 pb-4';
+
+  // Drop shadow toggle button
+  const dropShadowCard = document.createElement('button');
+  dropShadowCard.setAttribute('aria-label', 'Toggle drop shadow effect');
+  dropShadowCard.setAttribute('aria-pressed', localDropShadow ? 'true' : 'false');
+  dropShadowCard.innerHTML = `<span>Drop Shadow</span>`;
+  dropShadowCard.addEventListener('click', () => {
+    localDropShadow = !localDropShadow;
+    updateDropShadowCard();
+    onDropShadowChange?.(localDropShadow);
+  });
+
+  function updateDropShadowCard() {
+    dropShadowCard.className = bgCardClass(localDropShadow);
+    dropShadowCard.setAttribute('aria-pressed', localDropShadow ? 'true' : 'false');
+    // Use a shadow icon
+    dropShadowCard.innerHTML = `${SVG_SHADOW}<span>Drop Shadow</span>`;
+  }
+
+  effectsGrid.appendChild(dropShadowCard);
+
+  panel.appendChild(effectsSeparator);
+  panel.appendChild(effectsHeading);
+  panel.appendChild(effectsGrid);
+
+  // Set initial state for effects
+  updateDropShadowCard();
 
   return panel;
 }

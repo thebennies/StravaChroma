@@ -36,6 +36,9 @@ export const appState = {
   // Background
   selectedBackground:   'auto',    // 'auto' | 'black' | 'white' | 'image'
   customImage:          null,       // data URL string | null
+
+  // Effects
+  dropShadowEnabled:    false,     // true | false
 };
 
 const listeners = [];
