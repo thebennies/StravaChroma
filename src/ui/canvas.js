@@ -161,8 +161,7 @@ export function setRenderSpinner(visible) {
 
 /**
  * Applies a CSS drop-shadow filter to the preview canvas.
- * Note: This is a CSS-only visual effect for the preview. Exported images
- * use an offscreen canvas and won't include this shadow (by design).
+ * The same filter is applied during export via canvas context filter.
  */
 export function setDropShadow(enabled) {
   if (!canvas) return;

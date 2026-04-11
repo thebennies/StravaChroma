@@ -463,7 +463,7 @@ async function handleExport() {
 
   try {
     trackExport(appState, COLORWAYS);
-    await downloadExport(result.pixelData, result.width, result.height);
+    await downloadExport(result.pixelData, result.width, result.height, appState.dropShadowEnabled);
   } catch (err) {
     console.error('Download failed:', err);
     toast.error('Failed to save image. Please try again.');

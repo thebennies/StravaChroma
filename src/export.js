@@ -8,11 +8,12 @@ const RETRY_DELAY_MS = 500;
  * @param {Uint8ClampedArray} pixelData  — rendered RGBA at full resolution
  * @param {number} width
  * @param {number} height
+ * @param {boolean} [dropShadowEnabled] — whether to apply drop shadow effect
  * @param {number} [retryCount] — internal retry counter
  */
-export async function downloadExport(pixelData, width, height, retryCount = 0) {
+export async function downloadExport(pixelData, width, height, dropShadowEnabled = false, retryCount = 0) {
   try {
-    await attemptDownload(pixelData, width, height);
+    await attemptDownload(pixelData, width, height, dropShadowEnabled);
     toast.success('Image saved successfully!');
   } catch (err) {
     console.error(`Export attempt ${retryCount + 1} failed:`, err);
@@ -20,7 +21,7 @@ export async function downloadExport(pixelData, width, height, retryCount = 0) {
     if (retryCount < MAX_RETRIES) {
       toast.warning('Retrying export...');
       await delay(RETRY_DELAY_MS * (retryCount + 1)); // Exponential backoff
-      return downloadExport(pixelData, width, height, retryCount + 1);
+      return downloadExport(pixelData, width, height, dropShadowEnabled, retryCount + 1);
     }
     
     toast.error('Export failed after multiple attempts. Please try again.');
@@ -31,7 +32,7 @@ export async function downloadExport(pixelData, width, height, retryCount = 0) {
 /**
  * Internal download attempt
  */
-async function attemptDownload(pixelData, width, height) {
+async function attemptDownload(pixelData, width, height, dropShadowEnabled = false) {
   const hiddenCanvas = document.createElement('canvas');
   hiddenCanvas.width = width;
   hiddenCanvas.height = height;
@@ -39,6 +40,11 @@ async function attemptDownload(pixelData, width, height) {
 
   if (!ctx) {
     throw new Error('Could not get 2D context');
+  }
+
+  // Apply drop shadow filter if enabled
+  if (dropShadowEnabled) {
+    ctx.filter = 'drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5))';
   }
 
   const imageData = new ImageData(pixelData, width, height);
