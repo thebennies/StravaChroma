@@ -1974,13 +1974,6 @@ export const COLORWAYS = [
     map:   { hue: 22,  sat: 0.18, luminance: 0.14 },
     label: { hue: 38,  sat: 0.45, luminance: 0.89 },
   },
-  {
-    name:  "Tukang Kopi",
-    group: 'Kopi',
-    data:  { hue: 25,  sat: 0.28, luminance: 0.33 },
-    map:   { hue: 38,  sat: 0.45, luminance: 0.89 },
-    label: { hue: 150, sat: 0.25, luminance: 0.24 },
-  },
 
   // ── Comics — DC, Marvel, Image, Dark Horse ────────────────────────────────────
   {
