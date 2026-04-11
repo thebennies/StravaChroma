@@ -159,6 +159,15 @@ export function setRenderSpinner(visible) {
   if (renderSpinner) renderSpinner.classList.toggle('hidden', !visible);
 }
 
+export function setDropShadow(enabled) {
+  if (!canvas) return;
+  if (enabled) {
+    canvas.style.filter = 'drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5))';
+  } else {
+    canvas.style.filter = '';
+  }
+}
+
 function clampScale(s) {
   return Math.max(MIN_SCALE, Math.min(MAX_SCALE, s));
 }
