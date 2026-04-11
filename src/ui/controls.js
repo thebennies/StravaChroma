@@ -1572,7 +1572,9 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   function setActive(idx) {
     if (activeEl) {
-      detachHeartFromRow(activeEl);
+      const oldColorway = colorwayPresets[activeIdx];
+      const wasAlreadyFav = oldColorway && favorites.some(f => f.fingerprint === colorwayFingerprint(oldColorway));
+      if (!wasAlreadyFav) detachHeartFromRow(activeEl);
       activeEl.className = colorwayItemClass(false);
     }
     activeIdx = idx;
