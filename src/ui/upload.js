@@ -144,8 +144,6 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   sampleSection.appendChild(sampleGrid);
   dropZone.appendChild(sampleSection);
 
-  dropZone.appendChild(inner);
-
   // Features — no card bg, just icon + title + desc
   function gradIcon(id, svgPaths) {
     return [
@@ -192,7 +190,7 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   ];
 
   const featureGrid = document.createElement('div');
-  featureGrid.className = 'w-full max-w-lg grid grid-cols-3 gap-2 sm:gap-6 mt-6';
+  featureGrid.className = 'w-full max-w-lg grid grid-cols-3 gap-2 sm:gap-6 mt-6 mb-2';
 
   featureItems.forEach(({ icon, title, desc }) => {
     const col = document.createElement('div');
@@ -217,11 +215,7 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   });
 
   dropZone.appendChild(featureGrid);
-
-  // spacer between features and OR
-  const featureOrSpacer = document.createElement('div');
-  featureOrSpacer.className = 'h-4';
-  dropZone.appendChild(featureOrSpacer);
+  dropZone.appendChild(inner);
 
   // OR divider
   const orDivider = document.createElement('div');
@@ -265,7 +259,6 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
 
   // Set initial visibility for simple mode
   featureGrid.style.display = isSimpleMode ? 'none' : '';
-  featureOrSpacer.style.display = isSimpleMode ? 'none' : '';
   orDivider.style.display = isSimpleMode ? 'none' : '';
 
   canvasPane.appendChild(dropZone);
@@ -357,7 +350,6 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
     line2.style.display = isSimpleMode ? 'none' : '';
     privacyNote.style.display = isSimpleMode ? 'none' : '';
     featureGrid.style.display = isSimpleMode ? 'none' : '';
-    featureOrSpacer.style.display = isSimpleMode ? 'none' : '';
     orDivider.style.display = isSimpleMode ? 'none' : '';
     updateDemoBtnStyle();
     avatarImg.style.filter = isSimpleMode ? 'grayscale(100%)' : '';

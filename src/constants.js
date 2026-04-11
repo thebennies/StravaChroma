@@ -11,18 +11,20 @@ export const MASK_DATA        = 2;
 export const MASK_LABEL       = 3;
 
 export const PRESETS = [
+  // Chromatic — ordered by hue (rainbow), Strava Orange pinned first
   { name: 'Strava Orange', hue: 25,  sat: 1.0, luminance: 0.5 },
-  { name: 'Neon Green',    hue: 120, sat: 1.0, luminance: 0.5 },
-  { name: 'Ice Blue',      hue: 185, sat: 0.9, luminance: 0.5 },
-  { name: 'Sunset',        hue: 10,  sat: 1.0, luminance: 0.5 },
-  { name: 'Monochrome',    hue: 0,   sat: 0.0, luminance: 0.5 },
-  { name: 'Vapor Wave',    hue: 310, sat: 0.9, luminance: 0.5 },
-  { name: 'Forest',        hue: 140, sat: 0.8, luminance: 0.5 },
-  { name: 'Ocean',         hue: 220, sat: 1.0, luminance: 0.5 },
-  { name: 'Canary Yellow', hue: 60,  sat: 1.0, luminance: 0.5 },
   { name: 'Crimson Red',   hue: 0,   sat: 1.0, luminance: 0.5 },
-  { name: 'White',         hue: 0,   sat: 0.0, luminance: 1.0 },
+  { name: 'Sunset',        hue: 10,  sat: 1.0, luminance: 0.5 },
+  { name: 'Canary Yellow', hue: 60,  sat: 1.0, luminance: 0.5 },
+  { name: 'Neon Green',    hue: 120, sat: 1.0, luminance: 0.5 },
+  { name: 'Forest',        hue: 140, sat: 0.8, luminance: 0.5 },
+  { name: 'Ice Blue',      hue: 185, sat: 0.9, luminance: 0.5 },
+  { name: 'Ocean',         hue: 220, sat: 1.0, luminance: 0.5 },
+  { name: 'Vapor Wave',    hue: 310, sat: 0.9, luminance: 0.5 },
+  // Neutrals — dark → light
   { name: 'Black',         hue: 0,   sat: 0.0, luminance: 0.0 },
+  { name: 'Monochrome',    hue: 0,   sat: 0.0, luminance: 0.5 },
+  { name: 'White',         hue: 0,   sat: 0.0, luminance: 1.0 },
 ];
 
 export const DEFAULT_MAP_PRESET   = PRESETS.findIndex(p => p.name === 'Strava Orange');
@@ -32,7 +34,7 @@ export const DEFAULT_LABEL_PRESET = PRESETS.findIndex(p => p.name === 'White');
 export const COLORWAYS = [
   // ── Auto-generated from single-layer color presets (same color on all layers)
   ...PRESETS.map(p => ({
-    name:  `Mono ${p.name}`,
+    name:  p.name,
     group: 'Mono',
     map:   { hue: p.hue, sat: p.sat, luminance: p.luminance },
     data:  { hue: p.hue, sat: p.sat, luminance: p.luminance },
