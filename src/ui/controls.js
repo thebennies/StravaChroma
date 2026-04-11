@@ -1,7 +1,8 @@
 import { PRESETS, COLORWAYS, DEFAULT_DATA_PRESET, DEFAULT_LABEL_PRESET } from '../constants.js';
-import { createIcons, Shuffle, ListRestart, RotateCw, Layers, X } from 'lucide';
+import { createIcons, Shuffle, ListRestart, RotateCw, Layers, X, Search } from 'lucide';
 
 const GROUP_SELECTION_KEY = 'stravachroma-selected-groups';
+const SEARCH_TERM_KEY = 'stravachroma-colorway-search-term';
 // Extract unique groups and sort with Mono at the end
 const UNIQUE_GROUPS = [...new Set(COLORWAYS.map(cw => cw.group))];
 const MANDATORY_GROUP = 'Mono';
@@ -97,7 +98,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
   container.appendChild(dataSection.el);
   container.appendChild(mapSection.el);
 
-  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers, X } });
+  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers, X, Search } });
 
   function setEnabled(enabled) {
     container.style.display = enabled ? '' : 'none';
@@ -236,7 +237,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
   // Activate default tab
   activateTab('colorways');
 
-  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers, X } });
+  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers, X, Search } });
 
   function setEnabled(enabled) {
     container.style.display = enabled ? 'flex' : 'none';
@@ -769,7 +770,13 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   groupBtn.setAttribute('aria-label', 'Select groups to display');
   groupBtn.innerHTML = `<i data-lucide="layers" class="w-4 h-4 flex-shrink-0"></i>`;
 
+  const searchBtn = document.createElement('button');
+  searchBtn.className = navBtnClass();
+  searchBtn.setAttribute('aria-label', 'Search colorways');
+  searchBtn.innerHTML = `<i data-lucide="search" class="w-4 h-4 flex-shrink-0"></i>`;
+
   navBtns.appendChild(groupBtn);
+  navBtns.appendChild(searchBtn);
   navBtns.appendChild(cycleBtn);
   navBtns.appendChild(shuffleBtn);
 
@@ -1029,6 +1036,210 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
     groupCheckboxes.forEach(({ group, updateCheckbox }) => updateCheckbox());
     modalOverlay.style.display = 'flex';
   });
+
+  // Search modal
+  const searchModalOverlay = document.createElement('div');
+  searchModalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
+  searchModalOverlay.style.display = 'none';
+
+  const searchModalContent = document.createElement('div');
+  searchModalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[70vh]';
+
+  // Search modal header
+  const searchModalHeader = document.createElement('div');
+  searchModalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
+
+  const searchModalTitle = document.createElement('h3');
+  searchModalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
+  searchModalTitle.innerHTML = `<i data-lucide="search" class="w-4 h-4 flex-shrink-0"></i><span>Search Colorways</span>`;
+
+  const searchCloseBtn = document.createElement('button');
+  searchCloseBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
+  searchCloseBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
+  searchCloseBtn.setAttribute('aria-label', 'Close search modal');
+  searchCloseBtn.addEventListener('click', () => {
+    searchModalOverlay.style.display = 'none';
+  });
+
+  searchModalHeader.appendChild(searchModalTitle);
+  searchModalHeader.appendChild(searchCloseBtn);
+
+  // Search input container
+  const searchInputContainer = document.createElement('div');
+  searchInputContainer.className = 'px-4 py-3 border-b border-border';
+
+  const searchInputWrapper = document.createElement('div');
+  searchInputWrapper.className = 'relative';
+
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.placeholder = 'Search colorway name...';
+  searchInput.className = [
+    'w-full bg-surface-variant border border-border rounded-lg',
+    'px-3 py-2 pr-10 text-sm text-text-primary',
+    'placeholder:text-text-muted',
+    'focus:outline-none focus:border-primary',
+  ].join(' ');
+
+  // Clear button
+  const clearSearchBtn = document.createElement('button');
+  clearSearchBtn.className = [
+    'absolute right-2 top-1/2 -translate-y-1/2',
+    'text-text-muted hover:text-text-primary',
+    'transition-colors',
+  ].join(' ');
+  clearSearchBtn.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
+  clearSearchBtn.setAttribute('aria-label', 'Clear search');
+  clearSearchBtn.style.display = 'none';
+
+  searchInputWrapper.appendChild(searchInput);
+  searchInputWrapper.appendChild(clearSearchBtn);
+  searchInputContainer.appendChild(searchInputWrapper);
+
+  // Search results container
+  const searchResultsContainer = document.createElement('div');
+  searchResultsContainer.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2';
+
+  searchModalContent.appendChild(searchModalHeader);
+  searchModalContent.appendChild(searchInputContainer);
+  searchModalContent.appendChild(searchResultsContainer);
+  searchModalOverlay.appendChild(searchModalContent);
+  panel.appendChild(searchModalOverlay);
+
+  // Load saved search term
+  function getSavedSearchTerm() {
+    try {
+      return localStorage.getItem(SEARCH_TERM_KEY) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  function saveSearchTerm(term) {
+    try {
+      if (term) {
+        localStorage.setItem(SEARCH_TERM_KEY, term);
+      } else {
+        localStorage.removeItem(SEARCH_TERM_KEY);
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
+  // Search functionality
+  function performSearch(query) {
+    const normalizedQuery = query.toLowerCase().trim();
+    
+    if (!normalizedQuery) {
+      searchResultsContainer.innerHTML = '';
+      return;
+    }
+
+    const results = colorwayPresets.filter(cw => 
+      cw.name.toLowerCase().includes(normalizedQuery)
+    );
+
+    renderSearchResults(results);
+  }
+
+  function renderSearchResults(results) {
+    searchResultsContainer.innerHTML = '';
+
+    if (results.length === 0) {
+      const noResults = document.createElement('div');
+      noResults.className = 'px-2 py-4 text-center text-text-muted text-sm';
+      noResults.textContent = 'No colorways found';
+      searchResultsContainer.appendChild(noResults);
+      return;
+    }
+
+    results.forEach((colorway) => {
+      const originalIdx = colorwayPresets.indexOf(colorway);
+
+      const item = document.createElement('button');
+      item.className = colorwayItemClass(false);
+      item.setAttribute('aria-label', `Apply ${colorway.name} colorway`);
+
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'flex flex-col items-start flex-1 min-w-0';
+
+      const groupEl = document.createElement('span');
+      groupEl.className = 'text-xs text-text-muted mb-0.5';
+      groupEl.textContent = colorway.group;
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'text-sm font-medium truncate';
+      nameEl.textContent = colorway.name;
+
+      contentWrapper.appendChild(groupEl);
+      contentWrapper.appendChild(nameEl);
+
+      const swatches = document.createElement('div');
+      swatches.className = 'flex gap-1 flex-shrink-0 ml-2';
+      [
+        { layer: colorway.label, title: 'Label' },
+        { layer: colorway.data,  title: 'Data' },
+        { layer: colorway.map,   title: 'Map' },
+      ].forEach(({ layer, title }) => {
+        const dot = document.createElement('span');
+        dot.className = 'w-4 h-4 rounded-sm border border-white/20 flex-shrink-0';
+        dot.style.backgroundColor = swatchColor(layer.hue, layer.sat, layer.luminance);
+        dot.title = title;
+        swatches.appendChild(dot);
+      });
+
+      item.appendChild(contentWrapper);
+      item.appendChild(swatches);
+      
+      item.addEventListener('click', () => {
+        onColorway(originalIdx);
+        searchModalOverlay.style.display = 'none';
+      });
+
+      searchResultsContainer.appendChild(item);
+    });
+  }
+
+  // Search input handlers
+  searchInput.addEventListener('input', () => {
+    const value = searchInput.value;
+    clearSearchBtn.style.display = value ? 'block' : 'none';
+    saveSearchTerm(value);
+    performSearch(value);
+  });
+
+  clearSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    clearSearchBtn.style.display = 'none';
+    saveSearchTerm('');
+    performSearch('');
+    searchInput.focus();
+  });
+
+  // Open search modal on search button click
+  searchBtn.addEventListener('click', () => {
+    const savedTerm = getSavedSearchTerm();
+    searchInput.value = savedTerm;
+    clearSearchBtn.style.display = savedTerm ? 'block' : 'none';
+    searchModalOverlay.style.display = 'flex';
+    searchInput.focus();
+    performSearch(savedTerm);
+  });
+
+  // Close search modal on overlay click
+  searchModalOverlay.addEventListener('click', (e) => {
+    if (e.target === searchModalOverlay) {
+      searchModalOverlay.style.display = 'none';
+    }
+  });
+
+  // Close search modal on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && searchModalOverlay.style.display !== 'none') {
+      searchModalOverlay.style.display = 'none';
+    }
+  }, signal ? { signal } : undefined);
 
   function setActive(idx) {
     if (activeEl) activeEl.className = colorwayItemClass(false);
