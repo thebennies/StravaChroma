@@ -2303,5 +2303,9 @@ export const COLORWAYS = [
 
 ].sort((a, b) => {
   const ORDER = ['Mono', 'Running', 'Sneakers', 'Kopi', 'Brand', 'Luxury', 'EPL', 'NBA', 'Comics', 'TMNT', 'MechKeeb', 'IDE'];
-  return ORDER.indexOf(a.group) - ORDER.indexOf(b.group);
+  const ai = ORDER.indexOf(a.group);
+  const bi = ORDER.indexOf(b.group);
+  if (ai !== bi) return ai - bi;
+  if (a.group === 'Running') return a.name.localeCompare(b.name);
+  return 0;
 });
