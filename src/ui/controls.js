@@ -3,6 +3,35 @@ import { createIcons, Shuffle, ListRestart, RotateCw, Layers, X, Search } from '
 
 const GROUP_SELECTION_KEY = 'stravachroma-selected-groups';
 const SEARCH_TERM_KEY = 'stravachroma-colorway-search-term';
+const FAVORITES_KEY = 'stravachroma-favorites';
+
+function colorwayFingerprint(cw) {
+  const { map, data, label } = cw;
+  return `${map.hue},${map.sat},${map.luminance}|${data.hue},${data.sat},${data.luminance}|${label.hue},${label.sat},${label.luminance}`;
+}
+
+function getSavedFavorites() {
+  try {
+    const saved = localStorage.getItem(FAVORITES_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return [];
+      return parsed;
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+  return [];
+}
+
+function saveFavorites(favorites) {
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 // Extract unique groups and sort with Mono at the end
 const UNIQUE_GROUPS = [...new Set(COLORWAYS.map(cw => cw.group))];
 const MANDATORY_GROUP = 'Mono';
@@ -280,6 +309,9 @@ const SVG_SUN  = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
 const SVG_AUTO = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor" stroke="none"/></svg>`;
 const SVG_IMG  = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
 const SVG_X    = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
+const SVG_HEART_OUTLINE =`<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
+const SVG_HEART_FILLED  = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
 
 function bgCardClass(active) {
   return [
@@ -708,8 +740,8 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
     panel.style.overflow = 'hidden';
   }
 
-  // Get selected groups from localStorage
   let selectedGroups = getSavedGroupSelection();
+  let favorites = getSavedFavorites();
 
   // Filter colorways based on selected groups
   function getFilteredColorways() {
@@ -770,12 +802,18 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   groupBtn.setAttribute('aria-label', 'Select groups to display');
   groupBtn.innerHTML = `<i data-lucide="layers" class="w-4 h-4 flex-shrink-0"></i>`;
 
+  const favBtn = document.createElement('button');
+  favBtn.className = navBtnClass();
+  favBtn.setAttribute('aria-label', 'View favorites');
+  favBtn.innerHTML = SVG_HEART_OUTLINE;
+
   const searchBtn = document.createElement('button');
   searchBtn.className = navBtnClass();
   searchBtn.setAttribute('aria-label', 'Search colorways');
   searchBtn.innerHTML = `<i data-lucide="search" class="w-4 h-4 flex-shrink-0"></i>`;
 
   navBtns.appendChild(groupBtn);
+  navBtns.appendChild(favBtn);
   navBtns.appendChild(searchBtn);
   navBtns.appendChild(cycleBtn);
   navBtns.appendChild(shuffleBtn);
@@ -783,6 +821,73 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   navBar.appendChild(prevBtn);
   navBar.appendChild(navBtns);
   navBar.appendChild(nextBtn);
+
+  function updateFavBtnIcon() {
+    favBtn.innerHTML = favorites.length > 0 ? SVG_HEART_FILLED : SVG_HEART_OUTLINE;
+    favBtn.setAttribute('aria-label', favorites.length > 0 ? `View favorites (${favorites.length})` : 'View favorites');
+  }
+  updateFavBtnIcon();
+
+  function heartBtnClass(isFav) {
+    return [
+      'w-7 h-7 flex items-center justify-center rounded flex-shrink-0',
+      'transition-colors duration-150',
+      isFav ? 'text-error hover:text-error/70' : 'text-text-muted hover:text-text-primary',
+    ].join(' ');
+  }
+
+  function buildFavoritedHeartBtn(colorway, fp, onUnfavorite) {
+    const heartBtn = document.createElement('button');
+    heartBtn.dataset.heart = '1';
+    heartBtn.className = heartBtnClass(true);
+    heartBtn.setAttribute('aria-label', `Remove ${colorway.name} from favorites`);
+    heartBtn.innerHTML = SVG_HEART_FILLED;
+    heartBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      favorites = favorites.filter(f => f.fingerprint !== fp);
+      saveFavorites(favorites);
+      heartBtn.remove();
+      updateFavBtnIcon();
+      onUnfavorite?.();
+      if (favModalOverlay.style.display !== 'none') renderFavoritesModal();
+    });
+    return heartBtn;
+  }
+
+  function attachHeartToRow(rowEl, colorway) {
+    detachHeartFromRow(rowEl);
+    const fp = colorwayFingerprint(colorway);
+    const isFav = favorites.some(f => f.fingerprint === fp);
+
+    const heartBtn = document.createElement('button');
+    heartBtn.dataset.heart = '1';
+    heartBtn.className = heartBtnClass(isFav);
+    heartBtn.setAttribute('aria-label', isFav ? `Remove ${colorway.name} from favorites` : `Add ${colorway.name} to favorites`);
+    heartBtn.innerHTML = isFav ? SVG_HEART_FILLED : SVG_HEART_OUTLINE;
+
+    heartBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (favorites.some(f => f.fingerprint === fp)) {
+        favorites = favorites.filter(f => f.fingerprint !== fp);
+      } else {
+        favorites = [...favorites, { fingerprint: fp, name: colorway.name }];
+      }
+      saveFavorites(favorites);
+      const nowFav = favorites.some(f => f.fingerprint === fp);
+      heartBtn.className = heartBtnClass(nowFav);
+      heartBtn.setAttribute('aria-label', nowFav ? `Remove ${colorway.name} from favorites` : `Add ${colorway.name} to favorites`);
+      heartBtn.innerHTML = nowFav ? SVG_HEART_FILLED : SVG_HEART_OUTLINE;
+      updateFavBtnIcon();
+      if (favModalOverlay.style.display !== 'none') renderFavoritesModal();
+    });
+
+    rowEl.insertBefore(heartBtn, rowEl.lastChild);
+  }
+
+  function detachHeartFromRow(rowEl) {
+    const existing = rowEl.querySelector('[data-heart]');
+    if (existing) existing.remove();
+  }
 
   // Scrollable list
   const list = document.createElement('div');
@@ -804,12 +909,12 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   let currentGroup = null;
 
   function renderList() {
-    // Clear existing items
     list.innerHTML = '';
     items.length = 0;
     currentGroup = null;
+    const favSet = new Set(favorites.map(f => f.fingerprint));
 
-    filteredColorways.forEach((colorway, filteredIdx) => {
+    filteredColorways.forEach((colorway) => {
       const originalIdx = colorwayPresets.indexOf(colorway);
 
       if (colorway.group !== currentGroup) {
@@ -825,7 +930,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       item.setAttribute('aria-label', `Apply ${colorway.name} colorway`);
 
       const nameEl = document.createElement('span');
-      nameEl.className = 'text-sm font-medium';
+      nameEl.className = 'text-sm font-medium flex-1 truncate';
       nameEl.textContent = colorway.name;
 
       const swatches = document.createElement('div');
@@ -847,6 +952,11 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       item.addEventListener('click', () => onColorway(originalIdx));
       list.appendChild(item);
       items.push({ el: item, originalIdx });
+
+      const fp = colorwayFingerprint(colorway);
+      if (favSet.has(fp)) {
+        item.insertBefore(buildFavoritedHeartBtn(colorway, fp), item.lastChild);
+      }
     });
 
     // Restore active state if still visible
@@ -855,6 +965,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       if (matching) {
         activeEl = matching.el;
         activeEl.className = colorwayItemClass(true);
+        attachHeartToRow(activeEl, colorwayPresets[activeIdx]);
       } else {
         activeEl = null;
       }
@@ -1037,6 +1148,203 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
     modalOverlay.style.display = 'flex';
   });
 
+  // Favorites modal
+  const favModalOverlay = document.createElement('div');
+  favModalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
+  favModalOverlay.style.display = 'none';
+
+  const favModalContent = document.createElement('div');
+  favModalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[70vh]';
+
+  const favModalHeader = document.createElement('div');
+  favModalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
+
+  const favModalTitle = document.createElement('h3');
+  favModalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
+  favModalTitle.innerHTML = `${SVG_HEART_FILLED}<span>Favorites</span>`;
+
+  const favCloseBtn = document.createElement('button');
+  favCloseBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
+  favCloseBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
+  favCloseBtn.setAttribute('aria-label', 'Close favorites modal');
+  favCloseBtn.addEventListener('click', () => {
+    favModalOverlay.style.display = 'none';
+  });
+
+  favModalHeader.appendChild(favModalTitle);
+  favModalHeader.appendChild(favCloseBtn);
+
+  const favResultsContainer = document.createElement('div');
+  favResultsContainer.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2 flex flex-col gap-2';
+
+  const favModalFooter = document.createElement('div');
+  favModalFooter.className = 'border-t border-border px-4 py-3';
+  favModalFooter.style.display = 'none';
+
+  const favClearAllBtn = document.createElement('button');
+  favClearAllBtn.className = [
+    'flex items-center gap-2 w-full px-3 py-2.5 rounded-lg',
+    'text-sm text-error hover:bg-error/10 transition-colors duration-150',
+  ].join(' ');
+  favClearAllBtn.innerHTML = `${SVG_TRASH}<span>Clear all favorites</span>`;
+  favClearAllBtn.setAttribute('aria-label', 'Clear all favorites');
+  favClearAllBtn.addEventListener('click', () => {
+    if (!confirm('Clear all favorites?')) return;
+    favorites = [];
+    saveFavorites(favorites);
+    updateFavBtnIcon();
+    if (activeEl && activeIdx >= 0) attachHeartToRow(activeEl, colorwayPresets[activeIdx]);
+    renderFavoritesModal();
+  });
+
+  favModalFooter.appendChild(favClearAllBtn);
+
+  favModalContent.appendChild(favModalHeader);
+  favModalContent.appendChild(favResultsContainer);
+  favModalContent.appendChild(favModalFooter);
+  favModalOverlay.appendChild(favModalContent);
+  panel.appendChild(favModalOverlay);
+
+  function renderFavoritesModal() {
+    favResultsContainer.innerHTML = '';
+    favModalFooter.style.display = favorites.length > 0 ? '' : 'none';
+
+    if (favorites.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'px-2 py-8 text-center text-text-muted text-sm';
+      empty.textContent = 'No favorites yet. Select a colorway and tap the heart to save it.';
+      favResultsContainer.appendChild(empty);
+      return;
+    }
+
+    const resolved = favorites.map(fav => ({
+      fav,
+      colorway: colorwayPresets.find(cw => colorwayFingerprint(cw) === fav.fingerprint) ?? null,
+    }));
+
+    // Group resolved colorways by group, unavailable ones at the end
+    const available = resolved.filter(r => r.colorway !== null);
+    const unavailable = resolved.filter(r => r.colorway === null);
+
+    let currentFavGroup = null;
+
+    available.forEach(({ fav, colorway }) => {
+      const originalIdx = colorwayPresets.indexOf(colorway);
+
+      if (colorway.group !== currentFavGroup) {
+        const groupHeader = document.createElement('p');
+        groupHeader.className = 'mt-1 text-xs font-semibold tracking-wide uppercase text-text-secondary px-1';
+        groupHeader.textContent = colorway.group;
+        favResultsContainer.appendChild(groupHeader);
+        currentFavGroup = colorway.group;
+      }
+
+      const item = document.createElement('button');
+      item.className = colorwayItemClass(false);
+      item.setAttribute('aria-label', `Apply ${colorway.name} colorway`);
+
+      const contentWrapper = document.createElement('div');
+      contentWrapper.className = 'flex flex-col items-start flex-1 min-w-0';
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'text-sm font-medium truncate';
+      nameEl.textContent = colorway.name;
+      contentWrapper.appendChild(nameEl);
+
+      const swatches = document.createElement('div');
+      swatches.className = 'flex gap-1 flex-shrink-0';
+      [
+        { layer: colorway.label, title: 'Label' },
+        { layer: colorway.data,  title: 'Data' },
+        { layer: colorway.map,   title: 'Map' },
+      ].forEach(({ layer, title }) => {
+        const dot = document.createElement('span');
+        dot.className = 'w-4 h-4 rounded-sm border border-white/20 flex-shrink-0';
+        dot.style.backgroundColor = swatchColor(layer.hue, layer.sat, layer.luminance);
+        dot.title = title;
+        swatches.appendChild(dot);
+      });
+
+      const heartBtn = document.createElement('button');
+      heartBtn.className = 'w-7 h-7 flex items-center justify-center rounded flex-shrink-0 text-error hover:text-error/70 transition-colors duration-150';
+      heartBtn.setAttribute('aria-label', `Remove ${colorway.name} from favorites`);
+      heartBtn.innerHTML = SVG_HEART_FILLED;
+      heartBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent row click from firing
+        favorites = favorites.filter(f => f.fingerprint !== fav.fingerprint);
+        saveFavorites(favorites);
+        updateFavBtnIcon();
+        // If this was the active colorway, update its heart in the main list too
+        if (activeEl && activeIdx === originalIdx) {
+          attachHeartToRow(activeEl, colorway);
+        }
+        renderFavoritesModal();
+      });
+
+      item.appendChild(contentWrapper);
+      item.appendChild(heartBtn);
+      item.appendChild(swatches);
+      item.addEventListener('click', () => {
+        onColorway(originalIdx);
+        favModalOverlay.style.display = 'none';
+      });
+
+      favResultsContainer.appendChild(item);
+    });
+
+    // Show unavailable (removed colorways) at the bottom
+    if (unavailable.length > 0) {
+      const unavailableHeader = document.createElement('p');
+      unavailableHeader.className = 'mt-2 text-xs font-semibold tracking-wide uppercase text-text-muted px-1';
+      unavailableHeader.textContent = 'No longer available';
+      favResultsContainer.appendChild(unavailableHeader);
+
+      unavailable.forEach(({ fav }) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 w-full px-3 py-2.5 rounded-lg border border-border bg-surface opacity-50';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'text-sm font-medium flex-1 truncate text-text-muted';
+        nameEl.textContent = fav.name;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'w-7 h-7 flex items-center justify-center rounded flex-shrink-0 text-text-muted hover:text-text-primary transition-colors duration-150';
+        removeBtn.setAttribute('aria-label', `Remove ${fav.name} from favorites`);
+        removeBtn.innerHTML = SVG_HEART_FILLED;
+        removeBtn.addEventListener('click', () => {
+          favorites = favorites.filter(f => f.fingerprint !== fav.fingerprint);
+          saveFavorites(favorites);
+          updateFavBtnIcon();
+          renderFavoritesModal();
+        });
+
+        row.appendChild(nameEl);
+        row.appendChild(removeBtn);
+        favResultsContainer.appendChild(row);
+      });
+    }
+  }
+
+  // Open favorites modal
+  favBtn.addEventListener('click', () => {
+    renderFavoritesModal();
+    favModalOverlay.style.display = 'flex';
+  });
+
+  // Close favorites modal on overlay click
+  favModalOverlay.addEventListener('click', (e) => {
+    if (e.target === favModalOverlay) {
+      favModalOverlay.style.display = 'none';
+    }
+  });
+
+  // Close favorites modal on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && favModalOverlay.style.display !== 'none') {
+      favModalOverlay.style.display = 'none';
+    }
+  }, signal ? { signal } : undefined);
+
   // Search modal
   const searchModalOverlay = document.createElement('div');
   searchModalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
@@ -1098,7 +1406,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Search results container
   const searchResultsContainer = document.createElement('div');
-  searchResultsContainer.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2';
+  searchResultsContainer.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2 flex flex-col gap-2';
 
   searchModalContent.appendChild(searchModalHeader);
   searchModalContent.appendChild(searchInputContainer);
@@ -1145,6 +1453,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   function renderSearchResults(results) {
     searchResultsContainer.innerHTML = '';
+    const favSet = new Set(favorites.map(f => f.fingerprint));
 
     if (results.length === 0) {
       const noResults = document.createElement('div');
@@ -1189,9 +1498,15 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
         swatches.appendChild(dot);
       });
 
+      const fp = colorwayFingerprint(colorway);
       item.appendChild(contentWrapper);
+      if (favSet.has(fp)) {
+        item.appendChild(buildFavoritedHeartBtn(colorway, fp, () => {
+          if (activeEl && activeIdx === originalIdx) attachHeartToRow(activeEl, colorway);
+        }));
+      }
       item.appendChild(swatches);
-      
+
       item.addEventListener('click', () => {
         onColorway(originalIdx);
         searchModalOverlay.style.display = 'none';
@@ -1242,12 +1557,18 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   }, signal ? { signal } : undefined);
 
   function setActive(idx) {
-    if (activeEl) activeEl.className = colorwayItemClass(false);
+    if (activeEl) {
+      const oldColorway = colorwayPresets[activeIdx];
+      const wasAlreadyFav = oldColorway && favorites.some(f => f.fingerprint === colorwayFingerprint(oldColorway));
+      if (!wasAlreadyFav) detachHeartFromRow(activeEl);
+      activeEl.className = colorwayItemClass(false);
+    }
     activeIdx = idx;
     const matching = items.find(i => i.originalIdx === idx);
     activeEl = matching?.el ?? null;
     if (activeEl) {
       activeEl.className = colorwayItemClass(true);
+      attachHeartToRow(activeEl, colorwayPresets[idx]);
       activeEl.scrollIntoView({ block: 'nearest' });
     }
   }
@@ -1261,7 +1582,7 @@ function swatchColor(hue, sat, luminance) {
 
 function colorwayItemClass(active) {
   return [
-    'flex items-center justify-between w-full px-3 py-2.5',
+    'flex items-center gap-2 w-full px-3 py-2.5',
     'rounded-lg border cursor-pointer text-left',
     'transition-colors duration-150',
     active
