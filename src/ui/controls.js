@@ -712,7 +712,14 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Filter colorways based on selected groups
   function getFilteredColorways() {
-    return colorwayPresets.filter(cw => selectedGroups.includes(cw.group));
+    return colorwayPresets
+      .filter(cw => selectedGroups.includes(cw.group))
+      .sort((a, b) => {
+        const aIsMono = a.group === MANDATORY_GROUP;
+        const bIsMono = b.group === MANDATORY_GROUP;
+        if (aIsMono === bIsMono) return 0;
+        return aIsMono ? 1 : -1;
+      });
   }
 
   // Build filtered colorways list
