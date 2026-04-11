@@ -18,7 +18,7 @@ Personalize your run. Turn boring Strava share images into vibrant artworks — 
 
 - **Pixel classification** — automatically separates map, data, and label pixels using connected-component analysis and Otsu thresholding
 - **Independent layer controls** — tune hue and saturation for the map, data, and label layers separately with HSL sliders
-- **60+ colorways** — curated palettes grouped by running brands, sports teams, mechanical keyboards, IDE themes, luxury brands, and more; plus 12 single-layer presets
+- **Hundreds colorways** — curated palettes grouped by running brands, sports teams, mechanical keyboards, IDE themes, luxury brands, and more; plus 12 single-layer presets
 - **Live preview** — downscaled real-time preview while adjusting; full-resolution on export
 - **Off-thread processing** — classification and rendering run in a Web Worker to keep the UI responsive
 - **Drag-and-drop** — drop an image anywhere on the page to load it
