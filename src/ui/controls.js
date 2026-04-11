@@ -2,8 +2,13 @@ import { PRESETS, COLORWAYS, DEFAULT_DATA_PRESET, DEFAULT_LABEL_PRESET } from '.
 import { createIcons, Shuffle, ListRestart, RotateCw, Layers, X } from 'lucide';
 
 const GROUP_SELECTION_KEY = 'stravachroma-selected-groups';
-const ALL_GROUPS = [...new Set(COLORWAYS.map(cw => cw.group))];
-const MANDATORY_GROUP = ALL_GROUPS[0];
+// Extract unique groups and sort with Mono at the end
+const UNIQUE_GROUPS = [...new Set(COLORWAYS.map(cw => cw.group))];
+const MANDATORY_GROUP = 'Mono';
+const ALL_GROUPS = [
+  ...UNIQUE_GROUPS.filter(g => g !== MANDATORY_GROUP),
+  MANDATORY_GROUP
+];
 
 function getSavedGroupSelection() {
   try {
