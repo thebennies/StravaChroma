@@ -878,15 +878,15 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   modalOverlay.style.display = 'none';
 
   const modalContent = document.createElement('div');
-  modalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden';
+  modalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[60vh]';
 
   // Modal header
   const modalHeader = document.createElement('div');
   modalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
 
   const modalTitle = document.createElement('h3');
-  modalTitle.className = 'text-sm font-semibold text-text-primary';
-  modalTitle.textContent = 'Select Groups';
+  modalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
+  modalTitle.innerHTML = `<i data-lucide="layers" class="w-4 h-4 flex-shrink-0"></i><span>Colorway Groups</span>`;
 
   const closeBtn = document.createElement('button');
   closeBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
@@ -901,22 +901,22 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Select all / Deselect all buttons
   const modalActions = document.createElement('div');
-  modalActions.className = 'flex gap-2 px-4 py-2 border-b border-border';
+  modalActions.className = 'flex gap-2 px-4 py-2';
 
   const selectAllBtn = document.createElement('button');
   selectAllBtn.className = 'flex-1 px-3 py-1.5 text-xs font-medium bg-surface-variant border border-border rounded-lg hover:border-primary transition-colors';
-  selectAllBtn.textContent = 'Select All';
+  selectAllBtn.textContent = 'All';
 
   const deselectAllBtn = document.createElement('button');
   deselectAllBtn.className = 'flex-1 px-3 py-1.5 text-xs font-medium bg-surface-variant border border-border rounded-lg hover:border-primary transition-colors';
-  deselectAllBtn.textContent = 'Deselect All';
+  deselectAllBtn.textContent = 'Minimal';
 
   modalActions.appendChild(selectAllBtn);
   modalActions.appendChild(deselectAllBtn);
 
   // Group list
   const groupList = document.createElement('div');
-  groupList.className = 'max-h-64 overflow-y-auto px-2 py-2';
+  groupList.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2';
 
   const groupCheckboxes = [];
 
