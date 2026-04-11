@@ -740,9 +740,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
     panel.style.overflow = 'hidden';
   }
 
-  // Get selected groups from localStorage
   let selectedGroups = getSavedGroupSelection();
-  // Load favorites from localStorage
   let favorites = getSavedFavorites();
 
   // Filter colorways based on selected groups
@@ -830,6 +828,32 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   }
   updateFavBtnIcon();
 
+  function heartBtnClass(isFav) {
+    return [
+      'w-7 h-7 flex items-center justify-center rounded flex-shrink-0',
+      'transition-colors duration-150',
+      isFav ? 'text-error hover:text-error/70' : 'text-text-muted hover:text-text-primary',
+    ].join(' ');
+  }
+
+  function buildFavoritedHeartBtn(colorway, fp, onUnfavorite) {
+    const heartBtn = document.createElement('button');
+    heartBtn.dataset.heart = '1';
+    heartBtn.className = heartBtnClass(true);
+    heartBtn.setAttribute('aria-label', `Remove ${colorway.name} from favorites`);
+    heartBtn.innerHTML = SVG_HEART_FILLED;
+    heartBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      favorites = favorites.filter(f => f.fingerprint !== fp);
+      saveFavorites(favorites);
+      heartBtn.remove();
+      updateFavBtnIcon();
+      onUnfavorite?.();
+      if (favModalOverlay.style.display !== 'none') renderFavoritesModal();
+    });
+    return heartBtn;
+  }
+
   function attachHeartToRow(rowEl, colorway) {
     detachHeartFromRow(rowEl);
     const fp = colorwayFingerprint(colorway);
@@ -837,36 +861,26 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
     const heartBtn = document.createElement('button');
     heartBtn.dataset.heart = '1';
-    heartBtn.className = [
-      'w-7 h-7 flex items-center justify-center rounded flex-shrink-0',
-      'transition-colors duration-150',
-      isFav ? 'text-error hover:text-error/70' : 'text-text-muted hover:text-text-primary',
-    ].join(' ');
+    heartBtn.className = heartBtnClass(isFav);
     heartBtn.setAttribute('aria-label', isFav ? `Remove ${colorway.name} from favorites` : `Add ${colorway.name} to favorites`);
     heartBtn.innerHTML = isFav ? SVG_HEART_FILLED : SVG_HEART_OUTLINE;
 
     heartBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const fingerprint = colorwayFingerprint(colorway);
-      if (favorites.some(f => f.fingerprint === fingerprint)) {
-        favorites = favorites.filter(f => f.fingerprint !== fingerprint);
+      if (favorites.some(f => f.fingerprint === fp)) {
+        favorites = favorites.filter(f => f.fingerprint !== fp);
       } else {
-        favorites = [...favorites, { fingerprint, name: colorway.name }];
+        favorites = [...favorites, { fingerprint: fp, name: colorway.name }];
       }
       saveFavorites(favorites);
-      const nowFav = favorites.some(f => f.fingerprint === fingerprint);
-      heartBtn.className = [
-        'w-7 h-7 flex items-center justify-center rounded flex-shrink-0',
-        'transition-colors duration-150',
-        nowFav ? 'text-error hover:text-error/70' : 'text-text-muted hover:text-text-primary',
-      ].join(' ');
+      const nowFav = favorites.some(f => f.fingerprint === fp);
+      heartBtn.className = heartBtnClass(nowFav);
       heartBtn.setAttribute('aria-label', nowFav ? `Remove ${colorway.name} from favorites` : `Add ${colorway.name} to favorites`);
       heartBtn.innerHTML = nowFav ? SVG_HEART_FILLED : SVG_HEART_OUTLINE;
       updateFavBtnIcon();
       if (favModalOverlay.style.display !== 'none') renderFavoritesModal();
     });
 
-    // Insert before swatches (last child of the row)
     rowEl.insertBefore(heartBtn, rowEl.lastChild);
   }
 
@@ -895,12 +909,12 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   let currentGroup = null;
 
   function renderList() {
-    // Clear existing items
     list.innerHTML = '';
     items.length = 0;
     currentGroup = null;
+    const favSet = new Set(favorites.map(f => f.fingerprint));
 
-    filteredColorways.forEach((colorway, filteredIdx) => {
+    filteredColorways.forEach((colorway) => {
       const originalIdx = colorwayPresets.indexOf(colorway);
 
       if (colorway.group !== currentGroup) {
@@ -939,23 +953,9 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       list.appendChild(item);
       items.push({ el: item, originalIdx });
 
-      // Always show a filled heart on favorited rows (active row handled by attachHeartToRow)
       const fp = colorwayFingerprint(colorway);
-      if (favorites.some(f => f.fingerprint === fp)) {
-        const heartBtn = document.createElement('button');
-        heartBtn.dataset.heart = '1';
-        heartBtn.className = 'w-7 h-7 flex items-center justify-center rounded flex-shrink-0 text-error hover:text-error/70 transition-colors duration-150';
-        heartBtn.setAttribute('aria-label', `Remove ${colorway.name} from favorites`);
-        heartBtn.innerHTML = SVG_HEART_FILLED;
-        heartBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          favorites = favorites.filter(f => f.fingerprint !== fp);
-          saveFavorites(favorites);
-          heartBtn.remove();
-          updateFavBtnIcon();
-          if (favModalOverlay.style.display !== 'none') renderFavoritesModal();
-        });
-        item.insertBefore(heartBtn, item.lastChild);
+      if (favSet.has(fp)) {
+        item.insertBefore(buildFavoritedHeartBtn(colorway, fp), item.lastChild);
       }
     });
 
@@ -1453,6 +1453,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   function renderSearchResults(results) {
     searchResultsContainer.innerHTML = '';
+    const favSet = new Set(favorites.map(f => f.fingerprint));
 
     if (results.length === 0) {
       const noResults = document.createElement('div');
@@ -1498,28 +1499,13 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       });
 
       const fp = colorwayFingerprint(colorway);
-      if (favorites.some(f => f.fingerprint === fp)) {
-        const heartBtn = document.createElement('button');
-        heartBtn.dataset.heart = '1';
-        heartBtn.className = 'w-7 h-7 flex items-center justify-center rounded flex-shrink-0 text-error hover:text-error/70 transition-colors duration-150';
-        heartBtn.setAttribute('aria-label', `Remove ${colorway.name} from favorites`);
-        heartBtn.innerHTML = SVG_HEART_FILLED;
-        heartBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          favorites = favorites.filter(f => f.fingerprint !== fp);
-          saveFavorites(favorites);
-          heartBtn.remove();
-          updateFavBtnIcon();
+      item.appendChild(contentWrapper);
+      if (favSet.has(fp)) {
+        item.appendChild(buildFavoritedHeartBtn(colorway, fp, () => {
           if (activeEl && activeIdx === originalIdx) attachHeartToRow(activeEl, colorway);
-          if (favModalOverlay.style.display !== 'none') renderFavoritesModal();
-        });
-        item.appendChild(contentWrapper);
-        item.appendChild(heartBtn);
-        item.appendChild(swatches);
-      } else {
-        item.appendChild(contentWrapper);
-        item.appendChild(swatches);
+        }));
       }
+      item.appendChild(swatches);
 
       item.addEventListener('click', () => {
         onColorway(originalIdx);
