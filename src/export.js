@@ -42,13 +42,22 @@ async function attemptDownload(pixelData, width, height, dropShadowEnabled = fal
     throw new Error('Could not get 2D context');
   }
 
-  // Apply drop shadow filter if enabled
-  if (dropShadowEnabled) {
-    ctx.filter = 'drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5))';
-  }
-
   const imageData = new ImageData(pixelData, width, height);
-  ctx.putImageData(imageData, 0, 0);
+
+  if (dropShadowEnabled) {
+    // putImageData bypasses ctx.filter, so we must composite via drawImage:
+    // 1. Write raw pixels onto a temporary canvas
+    // 2. Draw that canvas onto the export canvas with the filter applied
+    const tmp = document.createElement('canvas');
+    tmp.width = width;
+    tmp.height = height;
+    tmp.getContext('2d').putImageData(imageData, 0, 0);
+    ctx.filter = 'drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5))';
+    ctx.drawImage(tmp, 0, 0);
+    ctx.filter = 'none';
+  } else {
+    ctx.putImageData(imageData, 0, 0);
+  }
 
   const blob = await new Promise((resolve, reject) => {
     hiddenCanvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob returned null')), 'image/png');
