@@ -309,7 +309,8 @@ const SVG_SUN  = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
 const SVG_AUTO = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor" stroke="none"/></svg>`;
 const SVG_IMG  = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
 const SVG_X    = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
-const SVG_HEART_OUTLINE = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
+const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
+const SVG_HEART_OUTLINE =`<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
 const SVG_HEART_FILLED  = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
 
 function bgCardClass(active) {
@@ -865,7 +866,8 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       if (favModalOverlay.style.display !== 'none') renderFavoritesModal();
     });
 
-    rowEl.appendChild(heartBtn);
+    // Insert before swatches (last child of the row)
+    rowEl.insertBefore(heartBtn, rowEl.lastChild);
   }
 
   function detachHeartFromRow(rowEl) {
@@ -936,6 +938,25 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       item.addEventListener('click', () => onColorway(originalIdx));
       list.appendChild(item);
       items.push({ el: item, originalIdx });
+
+      // Always show a filled heart on favorited rows (active row handled by attachHeartToRow)
+      const fp = colorwayFingerprint(colorway);
+      if (favorites.some(f => f.fingerprint === fp)) {
+        const heartBtn = document.createElement('button');
+        heartBtn.dataset.heart = '1';
+        heartBtn.className = 'w-7 h-7 flex items-center justify-center rounded flex-shrink-0 text-error hover:text-error/70 transition-colors duration-150';
+        heartBtn.setAttribute('aria-label', `Remove ${colorway.name} from favorites`);
+        heartBtn.innerHTML = SVG_HEART_FILLED;
+        heartBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          favorites = favorites.filter(f => f.fingerprint !== fp);
+          saveFavorites(favorites);
+          heartBtn.remove();
+          updateFavBtnIcon();
+          if (favModalOverlay.style.display !== 'none') renderFavoritesModal();
+        });
+        item.insertBefore(heartBtn, item.lastChild);
+      }
     });
 
     // Restore active state if still visible
@@ -1154,15 +1175,39 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   favModalHeader.appendChild(favCloseBtn);
 
   const favResultsContainer = document.createElement('div');
-  favResultsContainer.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2';
+  favResultsContainer.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2 flex flex-col gap-2';
+
+  const favModalFooter = document.createElement('div');
+  favModalFooter.className = 'border-t border-border px-4 py-3';
+  favModalFooter.style.display = 'none';
+
+  const favClearAllBtn = document.createElement('button');
+  favClearAllBtn.className = [
+    'flex items-center gap-2 w-full px-3 py-2.5 rounded-lg',
+    'text-sm text-error hover:bg-error/10 transition-colors duration-150',
+  ].join(' ');
+  favClearAllBtn.innerHTML = `${SVG_TRASH}<span>Clear all favorites</span>`;
+  favClearAllBtn.setAttribute('aria-label', 'Clear all favorites');
+  favClearAllBtn.addEventListener('click', () => {
+    if (!confirm('Clear all favorites?')) return;
+    favorites = [];
+    saveFavorites(favorites);
+    updateFavBtnIcon();
+    if (activeEl && activeIdx >= 0) attachHeartToRow(activeEl, colorwayPresets[activeIdx]);
+    renderFavoritesModal();
+  });
+
+  favModalFooter.appendChild(favClearAllBtn);
 
   favModalContent.appendChild(favModalHeader);
   favModalContent.appendChild(favResultsContainer);
+  favModalContent.appendChild(favModalFooter);
   favModalOverlay.appendChild(favModalContent);
   panel.appendChild(favModalOverlay);
 
   function renderFavoritesModal() {
     favResultsContainer.innerHTML = '';
+    favModalFooter.style.display = favorites.length > 0 ? '' : 'none';
 
     if (favorites.length === 0) {
       const empty = document.createElement('div');
@@ -1237,8 +1282,8 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       });
 
       item.appendChild(contentWrapper);
-      item.appendChild(swatches);
       item.appendChild(heartBtn);
+      item.appendChild(swatches);
       item.addEventListener('click', () => {
         onColorway(originalIdx);
         favModalOverlay.style.display = 'none';
@@ -1361,7 +1406,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Search results container
   const searchResultsContainer = document.createElement('div');
-  searchResultsContainer.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2';
+  searchResultsContainer.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2 flex flex-col gap-2';
 
   searchModalContent.appendChild(searchModalHeader);
   searchModalContent.appendChild(searchInputContainer);
@@ -1452,9 +1497,30 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
         swatches.appendChild(dot);
       });
 
-      item.appendChild(contentWrapper);
-      item.appendChild(swatches);
-      
+      const fp = colorwayFingerprint(colorway);
+      if (favorites.some(f => f.fingerprint === fp)) {
+        const heartBtn = document.createElement('button');
+        heartBtn.dataset.heart = '1';
+        heartBtn.className = 'w-7 h-7 flex items-center justify-center rounded flex-shrink-0 text-error hover:text-error/70 transition-colors duration-150';
+        heartBtn.setAttribute('aria-label', `Remove ${colorway.name} from favorites`);
+        heartBtn.innerHTML = SVG_HEART_FILLED;
+        heartBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          favorites = favorites.filter(f => f.fingerprint !== fp);
+          saveFavorites(favorites);
+          heartBtn.remove();
+          updateFavBtnIcon();
+          if (activeEl && activeIdx === originalIdx) attachHeartToRow(activeEl, colorway);
+          if (favModalOverlay.style.display !== 'none') renderFavoritesModal();
+        });
+        item.appendChild(contentWrapper);
+        item.appendChild(heartBtn);
+        item.appendChild(swatches);
+      } else {
+        item.appendChild(contentWrapper);
+        item.appendChild(swatches);
+      }
+
       item.addEventListener('click', () => {
         onColorway(originalIdx);
         searchModalOverlay.style.display = 'none';
