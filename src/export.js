@@ -3,17 +3,43 @@ import { toast } from './ui/toast.js';
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 500;
 
+// Cache for logo image
+let cachedLogoImage = null;
+
+/**
+ * Load the StravaChroma logo image
+ * @returns {Promise<HTMLImageElement>}
+ */
+async function loadLogoImage() {
+  if (cachedLogoImage) {
+    return cachedLogoImage;
+  }
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  
+  return new Promise((resolve, reject) => {
+    img.onload = () => {
+      cachedLogoImage = img;
+      resolve(img);
+    };
+    img.onerror = () => reject(new Error('Failed to load logo image'));
+    img.src = import.meta.env.BASE_URL + 'favicon.png';
+  });
+}
+
 /**
  * Triggers a full-res export download with automatic retry on failure.
  * @param {Uint8ClampedArray} pixelData  — rendered RGBA at full resolution
  * @param {number} width
  * @param {number} height
  * @param {boolean} [dropShadowEnabled] — whether to apply drop shadow effect
+ * @param {boolean} [showLogo] — whether to add StravaChroma logo
  * @param {number} [retryCount] — internal retry counter
  */
-export async function downloadExport(pixelData, width, height, dropShadowEnabled = false, retryCount = 0) {
+export async function downloadExport(pixelData, width, height, dropShadowEnabled = false, showLogo = false, retryCount = 0) {
   try {
-    await attemptDownload(pixelData, width, height, dropShadowEnabled);
+    await attemptDownload(pixelData, width, height, dropShadowEnabled, showLogo);
     toast.success('Image saved successfully!');
   } catch (err) {
     console.error(`Export attempt ${retryCount + 1} failed:`, err);
@@ -21,7 +47,7 @@ export async function downloadExport(pixelData, width, height, dropShadowEnabled
     if (retryCount < MAX_RETRIES) {
       toast.warning('Retrying export...');
       await delay(RETRY_DELAY_MS * (retryCount + 1)); // Exponential backoff
-      return downloadExport(pixelData, width, height, dropShadowEnabled, retryCount + 1);
+      return downloadExport(pixelData, width, height, dropShadowEnabled, showLogo, retryCount + 1);
     }
     
     toast.error('Export failed after multiple attempts. Please try again.');
@@ -32,7 +58,7 @@ export async function downloadExport(pixelData, width, height, dropShadowEnabled
 /**
  * Internal download attempt
  */
-async function attemptDownload(pixelData, width, height, dropShadowEnabled = false) {
+async function attemptDownload(pixelData, width, height, dropShadowEnabled = false, showLogo = false) {
   const hiddenCanvas = document.createElement('canvas');
   hiddenCanvas.width = width;
   hiddenCanvas.height = height;
@@ -54,10 +80,33 @@ async function attemptDownload(pixelData, width, height, dropShadowEnabled = fal
     tmp.getContext('2d').putImageData(imageData, 0, 0);
     ctx.filter = 'drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5))';
     ctx.drawImage(tmp, 0, 0);
-    ctx.filter = 'none';
+    // Note: filter remains active for logo drawing so logo also gets drop shadow
   } else {
     ctx.putImageData(imageData, 0, 0);
   }
+
+  // Draw logo if enabled
+  if (showLogo) {
+    try {
+      const logoImg = await loadLogoImage();
+      
+      // Logo width: 5% of image width, maintain aspect ratio
+      const logoWidth = Math.round(width * 0.05);
+      const logoHeight = Math.round(logoWidth * (logoImg.height / logoImg.width));
+      
+      // Position: centered horizontally, 48px from bottom
+      const logoX = Math.round((width - logoWidth) / 2);
+      const logoY = Math.round(height - logoHeight - 48);
+      
+      ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+    } catch (err) {
+      console.warn('Failed to draw logo:', err);
+      // Continue without logo if it fails to load
+    }
+  }
+
+  // Clear filter after all drawing operations
+  ctx.filter = 'none';
 
   const blob = await new Promise((resolve, reject) => {
     hiddenCanvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob returned null')), 'image/png');

@@ -368,6 +368,10 @@ function handleDropShadowChange(enabled) {
   setState({ dropShadowEnabled: enabled });
 }
 
+function handleLogoChange(enabled) {
+  setState({ showLogo: enabled });
+}
+
 // ── Render request ────────────────────────────────────────────────────────────
 
 function buildSliders() {
@@ -466,7 +470,7 @@ async function handleExport() {
 
   try {
     trackExport(appState, COLORWAYS);
-    await downloadExport(result.pixelData, result.width, result.height, appState.dropShadowEnabled);
+    await downloadExport(result.pixelData, result.width, result.height, appState.dropShadowEnabled, appState.showLogo);
   } catch (err) {
     console.error('Download failed:', err);
     toast.error('Failed to save image. Please try again.');
@@ -589,9 +593,11 @@ function setupEditor() {
       onRandom: handleRandom, onReset: handleReset, onSwap: handleSwap, onExport: handleExport, onColorway: handleColorway,
       onBackgroundChange: handleBackgroundChange,
       onDropShadowChange: handleDropShadowChange,
+      onLogoChange: handleLogoChange,
       initialBackground: appState.selectedBackground,
       initialCustomImage: appState.customImage,
       initialDropShadow: appState.dropShadowEnabled,
+      initialLogo: appState.showLogo,
       signal }
   );
   ({ updateMapControls, updateDataControls, updateLabelControls,
