@@ -138,7 +138,6 @@ export function buildDocsPage({ onClose } = {}) {
     buildSubsection('Uploading an Image', `
       Drag and drop a PNG onto the canvas, or click to browse. Files up to 100 MB and 50 megapixels are supported. Larger files may take a moment to process. Your image is never sent to a server.
     `),
-    buildSubsection('Colorways', buildColorwaysHelpBlurb()),
     buildSubsection('Manual Adjustments', `
       The Manual tab (or sidebar on desktop) gives you HSL sliders for each layer:
       • Map – the route line and map background
