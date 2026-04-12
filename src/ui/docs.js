@@ -1,4 +1,5 @@
 import { COLORWAYS } from '../constants.js';
+import { APP_VERSION } from '../version.js';
 
 const SCROLL_KEY = 'docs-scroll-y';
 
@@ -174,7 +175,7 @@ export function buildDocsPage({ onClose } = {}) {
 
   // Changelog Section
   content.appendChild(buildSection('Changelog', 'changelog', ICONS.changelog, [
-    buildSubsection('v1.0.0', `
+    buildSubsection(`v${APP_VERSION}`, `
       Initial release of StravaChroma.
       • Automatic layer detection (map, data, labels)
       • Color adjustment with HSL sliders
@@ -199,6 +200,15 @@ export function buildDocsPage({ onClose } = {}) {
     buildSubsection('Open Source', buildOpenSourceLinks()),
     buildSubsection('Maker', buildDeveloperCard()),
   ]));
+
+  // Docs footer with version
+  const docsFooter = document.createElement('footer');
+  docsFooter.className = 'max-w-2xl mx-auto px-6 pb-12 text-center';
+  const versionLine = document.createElement('p');
+  versionLine.className = 'text-xs text-text-muted';
+  versionLine.textContent = `v${APP_VERSION}`;
+  docsFooter.appendChild(versionLine);
+  content.appendChild(docsFooter);
 
   container.appendChild(content);
 

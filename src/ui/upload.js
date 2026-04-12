@@ -2,6 +2,7 @@ import { toast } from './toast.js';
 import { checkMemoryConstraints } from '../error-boundary.js';
 import { createIcons, Users, ScrollText, BookOpen, ImageUp } from 'lucide';
 import { openModal } from './modal.js';
+import { APP_VERSION } from '../version.js';
 
 /**
  * Builds the empty-state drop zone inside the canvas pane.
@@ -319,9 +320,14 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   copyright.className = 'text-xs text-text-muted';
   copyright.textContent = 'Copyright adalah Hak Cipta';
 
+  const versionBadge = document.createElement('p');
+  versionBadge.className = 'text-xs text-text-muted';
+  versionBadge.textContent = `v${APP_VERSION}`;
+
   footer.appendChild(avatarLink);
   footer.appendChild(footerLinks);
   footer.appendChild(copyright);
+  footer.appendChild(versionBadge);
   dropZone.appendChild(footer);
 
   // Hidden file input — remove any orphan from a previous buildUploadPrompt call
