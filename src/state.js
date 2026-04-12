@@ -39,6 +39,9 @@ export const appState = {
 
   // Effects
   dropShadowEnabled:    false,     // true | false
+
+  // Logo overlay
+  showLogo:             false,     // true | false - show StravaChroma logo on export
 };
 
 const listeners = [];
