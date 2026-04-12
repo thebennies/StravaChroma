@@ -33,8 +33,8 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
     'text-xs text-text-muted hover:text-text-primary hover:border-primary',
     'transition-all duration-150 cursor-pointer',
   ].join(' ');
-  toggleBtn.textContent = isSimpleMode ? 'Show Details' : 'Hide Details';
-  toggleBtn.setAttribute('aria-label', isSimpleMode ? 'Show landing page details' : 'Hide landing page details');
+  toggleBtn.textContent = isSimpleMode ? 'Show Full View' : 'Show Simple View';
+  toggleBtn.setAttribute('aria-label', isSimpleMode ? 'Show full landing page view' : 'Show simplified landing page view');
   canvasPane.appendChild(toggleBtn);
 
   // App title
@@ -356,8 +356,8 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
       localStorage.setItem(SIMPLE_MODE_KEY, String(isSimpleMode));
     } catch { /* ignore */ }
 
-    toggleBtn.textContent = isSimpleMode ? 'Show Details' : 'Hide Details';
-    toggleBtn.setAttribute('aria-label', isSimpleMode ? 'Show landing page details' : 'Hide landing page details');
+    toggleBtn.textContent = isSimpleMode ? 'Show Full View' : 'Show Simple View';
+    toggleBtn.setAttribute('aria-label', isSimpleMode ? 'Show full landing page view' : 'Show simplified landing page view');
 
     titleMain.style.display = isSimpleMode ? 'none' : '';
     titleSub.style.display = isSimpleMode ? 'none' : '';
