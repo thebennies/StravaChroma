@@ -73,7 +73,7 @@ function saveGroupSelection(selectedGroups) {
  * On mobile: renders a tab bar (TOOLS | MAP | DATA | LABEL) with Save button in the tab bar.
  * On desktop: renders all sections stacked (unchanged).
  */
-export function buildControls(container, { isMobile, onSliderChange, onPresetChange, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, onDropShadowChange, initialBackground = 'auto', initialCustomImage = null, initialDropShadow = false, onGradientChange, initialGradient = false, signal }) {
+export function buildControls(container, { isMobile, onSliderChange, onPresetChange, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, onDropShadowChange, onLogoChange, initialBackground = 'auto', initialCustomImage = null, initialDropShadow = false, onGradientChange, initialGradient = false, initialLogo = false, signal }) {
   container.innerHTML = '';
 
   const mapSection = buildLayerSection('Map / Route', 'map', {
@@ -107,12 +107,12 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
   });
 
   if (isMobile) {
-    return buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, signal });
+    return buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo, signal });
   }
 
   // ── Desktop: all sections stacked ──────────────────────────────────────────
 
-  const randomWrapper = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient });
+  const randomWrapper = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo });
   randomWrapper.classList.add('border-b', 'border-border');
 
   const desktopColorwaysSection = document.createElement('div');
@@ -154,7 +154,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
 
 // ── Mobile tab layout ─────────────────────────────────────────────────────────
 
-function buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, signal }) {
+function buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo, signal }) {
   // Make container a flex column — panels will live in an absolutely-positioned area
   container.style.display = 'flex';
   container.style.flexDirection = 'column';
@@ -189,7 +189,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
   panelArea.style.overflow = 'hidden';
 
   // Build panels
-  const actionsPanel = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient });
+  const actionsPanel = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo });
   const { el: colorwaysPanel, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { mobile: true, onSwap, signal });
 
   // Manual panel — stacks Label, Data, Map sections vertically with headings intact
@@ -352,6 +352,7 @@ const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18
 const SVG_HEART_OUTLINE =`<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
 const SVG_SHADOW = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5a6 6 0 0 0-6 6v6h12v-6a6 6 0 0 0-6-6Z"/><path d="M6 17v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1" opacity="0.5"/><path d="M8 20v2" opacity="0.3"/><path d="M12 20v2" opacity="0.3"/><path d="M16 20v2" opacity="0.3"/></svg>`;
 const SVG_GRADIENT = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="currentColor" stop-opacity="0.4"/><stop offset="50%" stop-color="currentColor" stop-opacity="1"/><stop offset="100%" stop-color="currentColor" stop-opacity="0.6"/></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="2" fill="url(#g)" stroke="currentColor"/></svg>`;
+const SVG_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 8h16"/><path d="M8 4v4"/></svg>`;
 const SVG_HEART_FILLED  = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
 
 function bgCardClass(active) {
@@ -365,7 +366,7 @@ function bgCardClass(active) {
   ].join(' ');
 }
 
-function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground = 'auto', initialCustomImage = null, onDropShadowChange, initialDropShadow = false, onGradientChange, initialGradient = false } = {}) {
+function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground = 'auto', initialCustomImage = null, onDropShadowChange, initialDropShadow = false, onGradientChange, initialGradient = false, onLogoChange, initialLogo = false } = {}) {
   const panel = document.createElement('div');
   panel.appendChild(buildActionGrid([
     {
@@ -505,6 +506,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   // ── Effects sub-section ─────────────────────────────────────────────────────
 
   let localDropShadow = initialDropShadow;
+  let localShowLogo = initialLogo;
 
   const effectsSeparator = document.createElement('div');
   effectsSeparator.className = 'border-t border-border mx-4';
@@ -556,6 +558,27 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
 
   effectsGrid.appendChild(gradientCard);
 
+  // ── Logo toggle button ──────────────────────────────────────────────────────
+
+  let localShowLogo = initialLogo;
+
+  const logoCard = document.createElement('button');
+  logoCard.setAttribute('aria-label', 'Toggle StravaChroma logo on export');
+  logoCard.setAttribute('aria-pressed', localShowLogo ? 'true' : 'false');
+  logoCard.addEventListener('click', () => {
+    localShowLogo = !localShowLogo;
+    updateLogoCard();
+    onLogoChange?.(localShowLogo);
+  });
+
+  function updateLogoCard() {
+    logoCard.className = bgCardClass(localShowLogo);
+    logoCard.setAttribute('aria-pressed', localShowLogo ? 'true' : 'false');
+    logoCard.innerHTML = `${SVG_LOGO}<span>Export Logo</span>`;
+  }
+
+  effectsGrid.appendChild(logoCard);
+
   panel.appendChild(effectsSeparator);
   panel.appendChild(effectsHeading);
   panel.appendChild(effectsGrid);
@@ -563,6 +586,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   // Set initial state for effects
   updateDropShadowCard();
   updateGradientCard();
+  updateLogoCard();
 
   return panel;
 }
