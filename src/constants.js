@@ -3334,7 +3334,7 @@ export const COLORWAYS = [
   },
 
 ].sort((a, b) => {
-  const ORDER = ['Mono', 'Running', 'Sneakers', 'Kopi', 'Brand', 'Luxury', 'EPL', 'NBA', 'Comics', 'TMNT', 'MechKeeb', 'IDE'];
+  const ORDER = ['Mono', 'Running', 'Kopi', 'Sneakers', 'Luxury', 'Brand', 'EPL', 'ISL', 'NBA', 'Movies', 'Comics', 'StarWars', 'TMNT', 'Retro', 'Cyberpunk', 'MechKeeb', 'IDE'];
   const ai = ORDER.indexOf(a.group);
   const bi = ORDER.indexOf(b.group);
   if (ai !== bi) return ai - bi;
