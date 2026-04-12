@@ -784,7 +784,12 @@ function buildPresetRow(layer, initialIndex, onChange, signal) {
 
   function updateTrigger() {
     const preset = PRESETS[currentIndex];
-    if (!preset) return;
+    if (!preset) {
+      // Show blank/placeholder when no preset matches (e.g., custom colorway color)
+      label.textContent = '';
+      swatch.style.backgroundColor = 'transparent';
+      return;
+    }
     label.textContent = preset.name;
     swatch.style.backgroundColor = swatchColor(preset.hue, preset.sat, preset.luminance);
   }
@@ -945,13 +950,23 @@ function buildPresetRow(layer, initialIndex, onChange, signal) {
   nextBtn.setAttribute('aria-label', 'Next color preset');
 
   prevBtn.addEventListener('click', () => {
-    currentIndex = (currentIndex - 1 + PRESETS.length) % PRESETS.length;
+    // If no preset selected, start from the first one
+    if (currentIndex === -1) {
+      currentIndex = PRESETS.length - 1;
+    } else {
+      currentIndex = (currentIndex - 1 + PRESETS.length) % PRESETS.length;
+    }
     updateTrigger();
     onChange(currentIndex);
   });
 
   nextBtn.addEventListener('click', () => {
-    currentIndex = (currentIndex + 1) % PRESETS.length;
+    // If no preset selected, start from the first one
+    if (currentIndex === -1) {
+      currentIndex = 0;
+    } else {
+      currentIndex = (currentIndex + 1) % PRESETS.length;
+    }
     updateTrigger();
     onChange(currentIndex);
   });
@@ -961,7 +976,8 @@ function buildPresetRow(layer, initialIndex, onChange, signal) {
   row.appendChild(nextBtn);
 
   function setValue(idx) {
-    if (idx >= 0 && idx < PRESETS.length) {
+    // Allow -1 (no selection / custom color) to clear the display
+    if (idx === -1 || (idx >= 0 && idx < PRESETS.length)) {
       currentIndex = idx;
       updateTrigger();
     }
