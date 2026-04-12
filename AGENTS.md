@@ -112,6 +112,19 @@ docs/description     # Documentation updates
 refactor/description # Code refactoring
 ```
 
+### Git Worktrees
+
+Always create git worktrees inside the `.worktrees/` directory at the repo root:
+
+```bash
+git worktree add .worktrees/<branch-name> <branch-name>
+```
+
+**Rules:**
+- Worktree path must always be `.worktrees/<branch-name>` — never at the repo root or any other location
+- `.worktrees/` is git-ignored; never commit worktree directories
+- Remove worktrees when done: `git worktree remove .worktrees/<branch-name>`
+
 ### Commit Convention (Conventional Commits)
 
 ```

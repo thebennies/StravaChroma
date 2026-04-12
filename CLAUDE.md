@@ -11,6 +11,17 @@ pnpm build        # production build → dist/
 pnpm preview      # serve production build locally
 ```
 
+## Git Worktrees
+
+Always create worktrees inside `.worktrees/` at the repo root:
+
+```bash
+git worktree add .worktrees/<branch-name> <branch-name>
+git worktree remove .worktrees/<branch-name>  # cleanup when done
+```
+
+Never place worktrees at the repo root or any other location.
+
 Run a single test file:
 ```bash
 pnpm vitest run src/worker/utils.test.js
