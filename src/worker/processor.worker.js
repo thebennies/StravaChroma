@@ -244,7 +244,7 @@ function render(pixelData, mask, width, height, sliders, downscale, gradientEnab
 
   // Pre-compute gradient colors if gradient is enabled
   const gradientColors = gradientEnabled
-    ? computeGradientColors(sliders, outW, outH)
+    ? computeGradientColors(sliders)
     : null;
 
   for (let i = 0; i < numPixels; i++) {
@@ -293,95 +293,105 @@ function render(pixelData, mask, width, height, sliders, downscale, gradientEnab
   return { data: output, width: outW, height: outH };
 }
 
+// Cosine/sine of 105° gradient angle, computed once.
+const GRAD_COS = Math.cos(105 * (Math.PI / 180));
+const GRAD_SIN = Math.sin(105 * (Math.PI / 180));
+
+// Luminance below which gradient is skipped (near-black).
+const GRADIENT_BLACK_THRESHOLD = 0.10;
+
 /**
- * Compute gradient colors for each layer.
- * Gradient pattern: slightly darker -> selected color -> darker color
- * Tilted at 15 degrees.
- * Returns null for layers that are black or near-black (luminance < 0.08).
+ * Build the three RGB stops for one layer's gradient.
+ * Pattern: slightly-darker → selected color → notably-darker, left → right (0°).
+ * Returns null when the color is near-black (no gradient applied).
+ *
+ * Offsets are relative to luminance so they scale correctly across all
+ * brightness levels:
+ *   start  = L × 0.82  (~18% darker than selected)
+ *   middle = L          (selected color)
+ *   end    = L × 0.55  (~45% darker than selected)
  */
-function computeGradientColors(sliders, width, height) {
+function buildLayerGradient(hue, sat, luminance) {
+  if (luminance < GRADIENT_BLACK_THRESHOLD) return null;
+
+  const startL  = luminance * 0.82;
+  const endL    = luminance * 0.55;
+
+  const [startR, startG, startB] = hslToRgb(hue, sat, startL);
+  const [midR,   midG,   midB]   = hslToRgb(hue, sat, luminance);
+  const [endR,   endG,   endB]   = hslToRgb(hue, sat, endL);
+
+  return {
+    start:  { r: startR, g: startG, b: startB },
+    middle: { r: midR,   g: midG,   b: midB   },
+    end:    { r: endR,   g: endG,   b: endB   },
+  };
+}
+
+/**
+ * Pre-compute one gradient per active layer.  Returns an object with keys
+ * map / data / label; each value is a gradient stops object or null.
+ */
+function computeGradientColors(sliders) {
   const { mapHue, mapSat, mapLuminance,
           dataHue, dataSat, dataLuminance,
           labelHue, labelSat, labelLuminance } = sliders;
 
-  // Black threshold - skip gradient for near-black colors
-  const BLACK_THRESHOLD = 0.08;
-
   return {
-    map: mapLuminance < BLACK_THRESHOLD ? null : buildLayerGradient(mapHue, mapSat, mapLuminance),
-    data: dataLuminance < BLACK_THRESHOLD ? null : buildLayerGradient(dataHue, dataSat, dataLuminance),
-    label: labelLuminance < BLACK_THRESHOLD ? null : buildLayerGradient(labelHue, labelSat, labelLuminance),
+    map:   buildLayerGradient(mapHue,   mapSat,   mapLuminance),
+    data:  buildLayerGradient(dataHue,  dataSat,  dataLuminance),
+    label: buildLayerGradient(labelHue, labelSat, labelLuminance),
   };
 }
 
 /**
- * Build gradient lookup for a layer.
- * Creates a smooth gradient: slightly darker -> selected color -> darker.
- * Uses balanced offsets so the gradient flows naturally without a "hill" effect.
+ * Sample the gradient for a single pixel.
+ * t is computed by projecting (x, y) onto the 0° gradient axis and
+ * normalising to [0, 1] across the image diagonal in that direction.
+ * A smoothstep curve is applied so transitions feel natural.
+ *
+ * Three-stop mapping:
+ *   t ∈ [0, 0.4]  →  start  → middle  (slightly-darker ramps up to selected)
+ *   t ∈ [0.4, 1]  →  middle → end     (selected ramps down to notably-darker)
+ *
+ * The midpoint is placed at t=0.4 instead of 0.5 so the selected color
+ * "peaks" slightly earlier, giving a more natural highlight feel.
  */
-function buildLayerGradient(hue, sat, luminance) {
-  // Start: slightly darker than selected (5% darker)
-  const startL = Math.max(0, luminance - 0.05);
-  // End: noticeably darker (15% darker)
-  const endL = Math.max(0, luminance - 0.15);
-
-  const [, startR, startG, startB] = hslToRgb(hue, sat, startL);
-  const [, midR, midG, midB] = hslToRgb(hue, sat, luminance);
-  const [, endR, endG, endB] = hslToRgb(hue, sat, endL);
-
-  return {
-    start: { r: startR, g: startG, b: startB, l: startL },
-    middle: { r: midR, g: midG, b: midB, l: luminance },
-    end: { r: endR, g: endG, b: endB, l: endL },
-  };
-}
-
-/**
- * Get gradient color for a pixel based on its position.
- * Gradient is tilted 15 degrees from horizontal.
- * Maps position to a smooth curve through three stops for natural shading.
- */
-function getGradientColor(layerGradient, pixelIndex, width, height) {
+function getGradientColor(grad, pixelIndex, width, height) {
   const x = pixelIndex % width;
   const y = Math.floor(pixelIndex / width);
 
-  // 15-degree tilt: angle in radians
-  const angleRad = 15 * (Math.PI / 180);
+  // Normalise projection to [0, 1] — works for any angle, including ones
+  // where cos or sin is negative (e.g. 105° where cos < 0).
+  // minProj is the projection at the "dark" corner; range spans the full diagonal.
+  const minProj = Math.min(0, (width - 1) * GRAD_COS) + Math.min(0, (height - 1) * GRAD_SIN);
+  const range   = (width - 1) * Math.abs(GRAD_COS) + (height - 1) * Math.abs(GRAD_SIN);
+  const proj    = x * GRAD_COS + y * GRAD_SIN;
+  const t       = Math.max(0, Math.min(1, (proj - minProj) / range));
 
-  // Project (x, y) onto the gradient direction
-  const gx = Math.cos(angleRad);
-  const gy = Math.sin(angleRad);
+  // Smoothstep for ease-in-out
+  const s = t * t * (3 - 2 * t);
 
-  // Normalize position to 0-1 range along the gradient direction
-  const maxProj = width * Math.abs(gx) + height * Math.abs(gy);
-  const proj = x * gx + y * gy;
-  let t = proj / maxProj;
-
-  // Clamp to 0-1
-  t = Math.max(0, Math.min(1, t));
-
-  // Smooth step function for more natural transitions (ease-in-out)
-  // This prevents sharp changes at the stops
-  const smoothT = t * t * (3 - 2 * t);
-
-  // Three-stop gradient with middle at t=0.5:
-  // 0.0 -> 0.5: start to middle (slightly darker → selected)
-  // 0.5 -> 1.0: middle to end (selected → darker)
-  const { start, middle, end } = layerGradient;
+  // Four-stop: start → peak → peak → end
+  // peak plateau covers 60% of the range (s: 0.2 → 0.8)
+  const RAMP_IN  = 0.2;
+  const RAMP_OUT = 0.8;
+  const { start, middle, end } = grad;
 
   let r, g, b;
-  if (smoothT < 0.5) {
-    // First half: start -> middle
-    const localT = smoothT * 2; // 0 to 1
-    r = Math.round(start.r + (middle.r - start.r) * localT);
-    g = Math.round(start.g + (middle.g - start.g) * localT);
-    b = Math.round(start.b + (middle.b - start.b) * localT);
+  if (s <= RAMP_IN) {
+    const lt = s / RAMP_IN; // 0→1 over leading ramp
+    r = (start.r + (middle.r - start.r) * lt) | 0;
+    g = (start.g + (middle.g - start.g) * lt) | 0;
+    b = (start.b + (middle.b - start.b) * lt) | 0;
+  } else if (s <= RAMP_OUT) {
+    // flat plateau — pure selected color
+    r = middle.r; g = middle.g; b = middle.b;
   } else {
-    // Second half: middle -> end
-    const localT = (smoothT - 0.5) * 2; // 0 to 1
-    r = Math.round(middle.r + (end.r - middle.r) * localT);
-    g = Math.round(middle.g + (end.g - middle.g) * localT);
-    b = Math.round(middle.b + (end.b - middle.b) * localT);
+    const lt = (s - RAMP_OUT) / (1 - RAMP_OUT); // 0→1 over trailing ramp
+    r = (middle.r + (end.r - middle.r) * lt) | 0;
+    g = (middle.g + (end.g - middle.g) * lt) | 0;
+    b = (middle.b + (end.b - middle.b) * lt) | 0;
   }
 
   return { r, g, b };
