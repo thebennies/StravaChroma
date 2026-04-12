@@ -78,7 +78,10 @@ function showToast(message, type = 'info') {
     });
   });
 
-  setTimeout(() => removeToast(el), AUTO_DISMISS_MS);
+  // Don't auto-dismiss error toasts - they require user action (WCAG 3.3.1)
+  if (type !== 'error') {
+    setTimeout(() => removeToast(el), AUTO_DISMISS_MS);
+  }
 }
 
 export const toast = {
