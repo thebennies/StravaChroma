@@ -204,11 +204,11 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
     iconWrap.innerHTML = icon;
 
     const colTitle = document.createElement('p');
-    colTitle.className = 'text-xs sm:text-sm font-bold text-text-primary leading-snug';
+    colTitle.className = 'text-sm font-bold text-text-primary leading-snug';
     colTitle.textContent = title;
 
     const colDesc = document.createElement('p');
-    colDesc.className = 'text-[11px] sm:text-xs text-text-secondary leading-relaxed';
+    colDesc.className = 'text-xs text-text-secondary leading-relaxed';
     colDesc.textContent = desc;
 
     col.appendChild(iconWrap);
@@ -225,7 +225,7 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   orDivider.className = 'flex items-center gap-4 w-full max-w-xs';
   orDivider.innerHTML = [
     '<div class="flex-1 h-px bg-border"></div>',
-    '<span class="text-xs font-medium text-text-muted tracking-widest">OR</span>',
+    '<span class="text-sm font-medium text-text-secondary tracking-widest">OR</span>',
     '<div class="flex-1 h-px bg-border"></div>',
   ].join('');
   dropZone.appendChild(orDivider);

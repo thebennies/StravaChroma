@@ -115,7 +115,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
   const desktopColorwaysSection = document.createElement('div');
   desktopColorwaysSection.className = 'border-b border-border';
   const desktopColorwaysHeading = document.createElement('p');
-  desktopColorwaysHeading.className = 'px-5 pt-4 pb-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
+  desktopColorwaysHeading.className = 'px-5 pt-4 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
   desktopColorwaysHeading.textContent = 'Colorways';
   const { el: desktopColorwaysInner, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { onSwap, signal });
   desktopColorwaysSection.appendChild(desktopColorwaysHeading);
@@ -361,7 +361,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   separator.className = 'border-t border-border mx-4';
 
   const bgHeading = document.createElement('p');
-  bgHeading.className = 'px-4 pt-3 pb-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
+  bgHeading.className = 'px-4 pt-3 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
   bgHeading.textContent = 'Background';
 
   const bgGrid = document.createElement('div');
@@ -466,7 +466,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   effectsSeparator.className = 'border-t border-border mx-4';
 
   const effectsHeading = document.createElement('p');
-  effectsHeading.className = 'px-4 pt-3 pb-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
+  effectsHeading.className = 'px-4 pt-3 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
   effectsHeading.textContent = 'Effects';
 
   const effectsGrid = document.createElement('div');
@@ -537,7 +537,7 @@ function buildLayerSection(title, layer, { initialHue, initialSat, initialLumina
 
   // Section title
   const heading = document.createElement('p');
-  heading.className = 'text-xs font-semibold tracking-wide uppercase text-text-secondary mb-4';
+  heading.className = 'text-sm font-semibold tracking-wide uppercase text-text-secondary mb-4';
   heading.textContent = title;
   section.appendChild(heading);
 
@@ -961,7 +961,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
       if (colorway.group !== currentGroup) {
         const groupHeader = document.createElement('p');
-        groupHeader.className = 'mt-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
+        groupHeader.className = 'mt-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
         groupHeader.textContent = colorway.group;
         list.appendChild(groupHeader);
         currentGroup = colorway.group;
@@ -970,6 +970,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       const item = document.createElement('button');
       item.className = colorwayItemClass(false);
       item.setAttribute('aria-label', `Apply ${colorway.name} colorway`);
+      item.setAttribute('aria-pressed', 'false');
 
       const nameEl = document.createElement('span');
       nameEl.className = 'text-sm font-medium flex-1 truncate';
@@ -1007,6 +1008,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       if (matching) {
         activeEl = matching.el;
         activeEl.className = colorwayItemClass(true);
+        activeEl.setAttribute('aria-current', 'true');
         attachHeartToRow(activeEl, colorwayPresets[activeIdx]);
       } else {
         activeEl = null;
@@ -1275,7 +1277,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
       if (colorway.group !== currentFavGroup) {
         const groupHeader = document.createElement('p');
-        groupHeader.className = 'mt-1 text-xs font-semibold tracking-wide uppercase text-text-secondary px-1';
+        groupHeader.className = 'mt-1 text-sm font-semibold tracking-wide uppercase text-text-secondary px-1';
         groupHeader.textContent = colorway.group;
         favResultsContainer.appendChild(groupHeader);
         currentFavGroup = colorway.group;
