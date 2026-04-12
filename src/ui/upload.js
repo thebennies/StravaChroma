@@ -326,7 +326,7 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
 
   const copyright = document.createElement('p');
   copyright.className = 'text-xs text-text-muted';
-  copyright.textContent = 'Copyright adalah Hak Cipta';
+  copyright.textContent = '© 2026 StravaChroma';
 
   const versionBadge = document.createElement('p');
   versionBadge.className = 'text-xs text-text-muted';
