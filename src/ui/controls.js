@@ -114,7 +114,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
 
   const desktopColorwaysSection = document.createElement('div');
   desktopColorwaysSection.className = 'border-b border-border';
-  const desktopColorwaysHeading = document.createElement('p');
+  const desktopColorwaysHeading = document.createElement('h2');
   desktopColorwaysHeading.className = 'px-5 pt-4 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
   desktopColorwaysHeading.textContent = 'Colorways';
   const { el: desktopColorwaysInner, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { onSwap, signal });
@@ -210,6 +210,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
   tabDefs.forEach(({ id, panel }) => {
     panel.id = `tab-panel-${id}`;
     panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', `tab-btn-${id}`);
     panel.style.position = 'absolute';
     panel.style.top = '0';
     panel.style.left = '0';
@@ -229,6 +230,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
 
   const tabBtns = tabDefs.map(({ id, label }) => {
     const btn = document.createElement('button');
+    btn.id = `tab-btn-${id}`;
     btn.textContent = label;
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-controls', `tab-panel-${id}`);
@@ -360,7 +362,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   const separator = document.createElement('div');
   separator.className = 'border-t border-border mx-4';
 
-  const bgHeading = document.createElement('p');
+  const bgHeading = document.createElement('h2');
   bgHeading.className = 'px-4 pt-3 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
   bgHeading.textContent = 'Background';
 
@@ -437,9 +439,13 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
 
   function updateCards() {
     darkCard.className  = bgCardClass(localBackground === 'black');
+    darkCard.setAttribute('aria-pressed', String(localBackground === 'black'));
     lightCard.className = bgCardClass(localBackground === 'white');
+    lightCard.setAttribute('aria-pressed', String(localBackground === 'white'));
     autoCard.className  = bgCardClass(localBackground === 'auto');
+    autoCard.setAttribute('aria-pressed', String(localBackground === 'auto'));
     imageCard.className = bgCardClass(localBackground === 'image');
+    imageCard.setAttribute('aria-pressed', String(localBackground === 'image'));
     imageCard.setAttribute('aria-label', localCustomImage ? 'Clear background image' : 'Set background image');
     imageCard.innerHTML = localCustomImage
       ? `${SVG_X}<span>Clear</span>`
@@ -465,7 +471,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   const effectsSeparator = document.createElement('div');
   effectsSeparator.className = 'border-t border-border mx-4';
 
-  const effectsHeading = document.createElement('p');
+  const effectsHeading = document.createElement('h2');
   effectsHeading.className = 'px-4 pt-3 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
   effectsHeading.textContent = 'Effects';
 
@@ -536,7 +542,7 @@ function buildLayerSection(title, layer, { initialHue, initialSat, initialLumina
   section.className = 'px-5 py-4 border-b border-border';
 
   // Section title
-  const heading = document.createElement('p');
+  const heading = document.createElement('h2');
   heading.className = 'text-sm font-semibold tracking-wide uppercase text-text-secondary mb-4';
   heading.textContent = title;
   section.appendChild(heading);
@@ -960,7 +966,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       const originalIdx = colorwayPresets.indexOf(colorway);
 
       if (colorway.group !== currentGroup) {
-        const groupHeader = document.createElement('p');
+        const groupHeader = document.createElement('h3');
         groupHeader.className = 'mt-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
         groupHeader.textContent = colorway.group;
         list.appendChild(groupHeader);
@@ -986,7 +992,8 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
         const dot = document.createElement('span');
         dot.className = 'w-4 h-4 rounded-sm border border-white/20 flex-shrink-0';
         dot.style.backgroundColor = swatchColor(layer.hue, layer.sat, layer.luminance);
-        dot.title = title;
+        dot.setAttribute('role', 'img');
+        dot.setAttribute('aria-label', `${title} color: ${swatchColor(layer.hue, layer.sat, layer.luminance)}`);
         swatches.appendChild(dot);
       });
 
@@ -1038,15 +1045,20 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   const modalOverlay = document.createElement('div');
   modalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
   modalOverlay.style.display = 'none';
+  modalOverlay.setAttribute('aria-modal', 'true');
 
   const modalContent = document.createElement('div');
   modalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[60vh]';
+  modalContent.setAttribute('role', 'dialog');
+  modalContent.setAttribute('aria-modal', 'true');
+  modalContent.setAttribute('aria-labelledby', 'group-modal-title');
 
   // Modal header
   const modalHeader = document.createElement('div');
   modalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
 
   const modalTitle = document.createElement('h3');
+  modalTitle.id = 'group-modal-title';
   modalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
   modalTitle.innerHTML = `<i data-lucide="layers" class="w-4 h-4 flex-shrink-0"></i><span>Colorway Groups</span>`;
 
@@ -1084,21 +1096,15 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   ALL_GROUPS.forEach(group => {
     const isMandatory = group === MANDATORY_GROUP;
-    const row = document.createElement('div');
+    const row = document.createElement('label');
     row.className = 'flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-surface-variant cursor-pointer';
 
-    const checkbox = document.createElement('div');
-    checkbox.className = `w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-      isMandatory
-        ? 'bg-primary border-primary cursor-not-allowed'
-        : 'border-border bg-surface'
-    }`;
-
-    const checkIcon = document.createElement('span');
-    checkIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-    checkIcon.className = isMandatory ? 'text-white' : 'text-white opacity-0';
-
-    checkbox.appendChild(checkIcon);
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'w-5 h-5 rounded border border-border bg-surface checked:bg-primary checked:border-primary text-white focus:ring-2 focus:ring-primary focus:ring-offset-0 focus:ring-offset-transparent';
+    checkbox.checked = selectedGroups.includes(group);
+    checkbox.disabled = isMandatory;
+    checkbox.setAttribute('aria-label', `Show colorways from ${group} group`);
 
     const label = document.createElement('span');
     label.className = 'text-sm text-text-primary flex-1';
@@ -1117,27 +1123,17 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
     }
 
     function updateCheckbox() {
-      const isChecked = selectedGroups.includes(group);
-      if (isChecked) {
-        checkbox.classList.remove('border-border', 'bg-surface');
-        checkbox.classList.add('bg-primary', 'border-primary');
-        checkIcon.classList.remove('opacity-0');
-      } else {
-        checkbox.classList.add('border-border', 'bg-surface');
-        checkbox.classList.remove('bg-primary', 'border-primary');
-        checkIcon.classList.add('opacity-0');
-      }
+      checkbox.checked = selectedGroups.includes(group);
     }
 
-    row.addEventListener('click', () => {
+    checkbox.addEventListener('change', () => {
       if (isMandatory) return;
-      if (selectedGroups.includes(group)) {
-        selectedGroups = selectedGroups.filter(g => g !== group);
-      } else {
+      if (checkbox.checked) {
         selectedGroups = [...selectedGroups, group];
+      } else {
+        selectedGroups = selectedGroups.filter(g => g !== group);
       }
       saveGroupSelection(selectedGroups);
-      updateCheckbox();
       refreshFilteredColorways();
       renderList();
     });
@@ -1196,14 +1192,19 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   const favModalOverlay = document.createElement('div');
   favModalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
   favModalOverlay.style.display = 'none';
+  favModalOverlay.setAttribute('aria-modal', 'true');
 
   const favModalContent = document.createElement('div');
   favModalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[70vh]';
+  favModalContent.setAttribute('role', 'dialog');
+  favModalContent.setAttribute('aria-modal', 'true');
+  favModalContent.setAttribute('aria-labelledby', 'fav-modal-title');
 
   const favModalHeader = document.createElement('div');
   favModalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
 
   const favModalTitle = document.createElement('h3');
+  favModalTitle.id = 'fav-modal-title';
   favModalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
   favModalTitle.innerHTML = `${SVG_HEART_FILLED}<span>Favorites</span>`;
 
@@ -1276,7 +1277,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       const originalIdx = colorwayPresets.indexOf(colorway);
 
       if (colorway.group !== currentFavGroup) {
-        const groupHeader = document.createElement('p');
+        const groupHeader = document.createElement('h3');
         groupHeader.className = 'mt-1 text-sm font-semibold tracking-wide uppercase text-text-secondary px-1';
         groupHeader.textContent = colorway.group;
         favResultsContainer.appendChild(groupHeader);
@@ -1393,15 +1394,20 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   const searchModalOverlay = document.createElement('div');
   searchModalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
   searchModalOverlay.style.display = 'none';
+  searchModalOverlay.setAttribute('aria-modal', 'true');
 
   const searchModalContent = document.createElement('div');
   searchModalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[70vh]';
+  searchModalContent.setAttribute('role', 'dialog');
+  searchModalContent.setAttribute('aria-modal', 'true');
+  searchModalContent.setAttribute('aria-labelledby', 'search-modal-title');
 
   // Search modal header
   const searchModalHeader = document.createElement('div');
   searchModalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
 
   const searchModalTitle = document.createElement('h3');
+  searchModalTitle.id = 'search-modal-title';
   searchModalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
   searchModalTitle.innerHTML = `<i data-lucide="search" class="w-4 h-4 flex-shrink-0"></i><span>Search Colorways</span>`;
 
