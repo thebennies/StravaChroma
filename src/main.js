@@ -368,15 +368,22 @@ function handleDropShadowChange(enabled) {
   setState({ dropShadowEnabled: enabled });
 }
 
+function handleGradientChange(enabled) {
+  setState({ gradientEnabled: enabled });
+  requestRender(false);
+}
+
 // ── Render request ────────────────────────────────────────────────────────────
 
 function buildSliders() {
   const { mapHue, mapSat, mapLuminance,
           dataHue, dataSat, dataLuminance,
-          labelHue, labelSat, labelLuminance } = appState;
+          labelHue, labelSat, labelLuminance,
+          gradientEnabled } = appState;
   return { mapHue, mapSat, mapLuminance,
            dataHue, dataSat, dataLuminance,
-           labelHue, labelSat, labelLuminance };
+           labelHue, labelSat, labelLuminance,
+           gradientEnabled };
 }
 
 function requestRender(isExport) {
@@ -400,6 +407,7 @@ function requestRender(isExport) {
         height: appState.sourceHeight,
         sliders,
         downscale: !isExport,
+        gradientEnabled: sliders.gradientEnabled,
       },
       [pixelCopy.buffer, maskCopy.buffer]
     );
@@ -442,6 +450,7 @@ async function handleExport() {
             height: appState.sourceHeight,
             sliders,
             downscale: false,
+            gradientEnabled: sliders.gradientEnabled,
           },
           [pixelCopy.buffer, maskCopy.buffer]
         );
@@ -592,6 +601,8 @@ function setupEditor() {
       initialBackground: appState.selectedBackground,
       initialCustomImage: appState.customImage,
       initialDropShadow: appState.dropShadowEnabled,
+      onGradientChange: handleGradientChange,
+      initialGradient: appState.gradientEnabled,
       signal }
   );
   ({ updateMapControls, updateDataControls, updateLabelControls,

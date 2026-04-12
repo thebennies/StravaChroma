@@ -39,6 +39,7 @@ export const appState = {
 
   // Effects
   dropShadowEnabled:    false,     // true | false
+  gradientEnabled:      false,     // true | false - experimental tilted gradient
 };
 
 const listeners = [];
