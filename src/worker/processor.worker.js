@@ -207,7 +207,7 @@ function classify(pixelData, width, height) {
 
 // ── Render pass ──────────────────────────────────────────────────────────────
 
-function render(pixelData, mask, width, height, sliders, downscale) {
+function render(pixelData, mask, width, height, sliders, downscale, gradientEnabled = false) {
   const { mapHue, mapSat, mapLuminance,
           dataHue, dataSat, dataLuminance,
           labelHue, labelSat, labelLuminance } = sliders;
@@ -242,6 +242,11 @@ function render(pixelData, mask, width, height, sliders, downscale) {
   const [dataR,  dataG,  dataB]  = hslToRgb(dataHue,  dataSat,  dataLuminance);
   const [labelR, labelG, labelB] = hslToRgb(labelHue, labelSat, labelLuminance);
 
+  // Pre-compute gradient colors if gradient is enabled
+  const gradientColors = gradientEnabled
+    ? computeGradientColors(sliders, outW, outH)
+    : null;
+
   for (let i = 0; i < numPixels; i++) {
     const base = i * 4;
     const a = srcData[base + 3];
@@ -257,11 +262,26 @@ function render(pixelData, mask, width, height, sliders, downscale) {
 
     let nr, ng, nb;
     if (m === MASK_MAP) {
-      nr = mapR;   ng = mapG;   nb = mapB;
+      if (gradientColors && gradientColors.map) {
+        const gc = getGradientColor(gradientColors.map, i, outW, outH);
+        nr = gc.r; ng = gc.g; nb = gc.b;
+      } else {
+        nr = mapR;   ng = mapG;   nb = mapB;
+      }
     } else if (m === MASK_DATA) {
-      nr = dataR;  ng = dataG;  nb = dataB;
+      if (gradientColors && gradientColors.data) {
+        const gc = getGradientColor(gradientColors.data, i, outW, outH);
+        nr = gc.r; ng = gc.g; nb = gc.b;
+      } else {
+        nr = dataR;  ng = dataG;  nb = dataB;
+      }
     } else {
-      nr = labelR; ng = labelG; nb = labelB;
+      if (gradientColors && gradientColors.label) {
+        const gc = getGradientColor(gradientColors.label, i, outW, outH);
+        nr = gc.r; ng = gc.g; nb = gc.b;
+      } else {
+        nr = labelR; ng = labelG; nb = labelB;
+      }
     }
 
     output[base]     = nr;
@@ -271,6 +291,97 @@ function render(pixelData, mask, width, height, sliders, downscale) {
   }
 
   return { data: output, width: outW, height: outH };
+}
+
+/**
+ * Compute gradient colors for each layer.
+ * Gradient pattern: slightly darker -> selected color -> darker color
+ * Tilted at 15 degrees.
+ * Returns null for layers that are black or near-black (luminance < 0.08).
+ */
+function computeGradientColors(sliders, width, height) {
+  const { mapHue, mapSat, mapLuminance,
+          dataHue, dataSat, dataLuminance,
+          labelHue, labelSat, labelLuminance } = sliders;
+
+  // Black threshold - skip gradient for near-black colors
+  const BLACK_THRESHOLD = 0.08;
+
+  return {
+    map: mapLuminance < BLACK_THRESHOLD ? null : buildLayerGradient(mapHue, mapSat, mapLuminance),
+    data: dataLuminance < BLACK_THRESHOLD ? null : buildLayerGradient(dataHue, dataSat, dataLuminance),
+    label: labelLuminance < BLACK_THRESHOLD ? null : buildLayerGradient(labelHue, labelSat, labelLuminance),
+  };
+}
+
+/**
+ * Build gradient lookup for a layer.
+ * Creates three color stops: slightly darker, selected color, darker.
+ */
+function buildLayerGradient(hue, sat, luminance) {
+  // Slightly darker (10% darker)
+  const darker1L = Math.max(0, luminance - 0.1);
+  // Darker at end (20% darker)
+  const darker2L = Math.max(0, luminance - 0.2);
+
+  const [, g1R, g1G, g1B] = hslToRgb(hue, sat, darker1L);
+  const [, selR, selG, selB] = hslToRgb(hue, sat, luminance);
+  const [, g2R, g2G, g2B] = hslToRgb(hue, sat, darker2L);
+
+  return {
+    stop1: { r: g1R, g: g1G, b: g1B },
+    selected: { r: selR, g: selG, b: selB },
+    stop2: { r: g2R, g: g2G, b: g2B },
+  };
+}
+
+/**
+ * Get gradient color for a pixel based on its position.
+ * Gradient is tilted 15 degrees from horizontal.
+ * Uses linear interpolation between gradient stops based on position.
+ */
+function getGradientColor(layerGradient, pixelIndex, width, height) {
+  const x = pixelIndex % width;
+  const y = Math.floor(pixelIndex / width);
+
+  // 15-degree tilt: angle in radians
+  const angleRad = 15 * (Math.PI / 180);
+
+  // Project (x, y) onto the gradient direction
+  // Gradient vector: (cos(angle), sin(angle))
+  const gx = Math.cos(angleRad);
+  const gy = Math.sin(angleRad);
+
+  // Normalize position to 0-1 range
+  // Project onto gradient direction to get position along the gradient
+  const maxProj = width * Math.abs(gx) + height * Math.abs(gy);
+  const proj = x * gx + y * gy;
+  let t = proj / maxProj;
+
+  // Clamp to 0-1
+  t = Math.max(0, Math.min(1, t));
+
+  // Map to three-stop gradient:
+  // 0.0 -> 0.5: stop1 to selected
+  // 0.5 -> 1.0: selected to stop2
+  const { stop1, selected, stop2 } = layerGradient;
+
+  let r, g, b;
+  if (t < 0.5) {
+    // First half: stop1 -> selected
+    const localT = t * 2; // 0 to 1
+    r = Math.round(stop1.r + (selected.r - stop1.r) * localT);
+    g = Math.round(stop1.g + (selected.g - stop1.g) * localT);
+    b = Math.round(stop1.b + (selected.b - stop1.b) * localT);
+  } else {
+    // Second half: selected -> stop2
+    const localT = (t - 0.5) * 2; // 0 to 1
+    r = Math.round(selected.r + (stop2.r - selected.r) * localT);
+    g = Math.round(selected.g + (stop2.g - selected.g) * localT);
+    b = Math.round(selected.b + (stop2.b - selected.b) * localT);
+  }
+
+  return { r, g, b };
 }
 
 // ── Message handler ───────────────────────────────────────────────────────────
@@ -291,9 +402,9 @@ self.onmessage = function(e) {
   }
 
   if (msg.type === 'render') {
-    const { requestId, pixelData, mask, width, height, sliders, downscale } = msg;
+    const { requestId, pixelData, mask, width, height, sliders, downscale, gradientEnabled } = msg;
     try {
-      const result = render(pixelData, mask, width, height, sliders, downscale);
+      const result = render(pixelData, mask, width, height, sliders, downscale, gradientEnabled);
       self.postMessage(
         { type: 'rendered', requestId, pixelData: result.data, width: result.width, height: result.height },
         [result.data.buffer]
