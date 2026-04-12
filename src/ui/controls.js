@@ -784,6 +784,7 @@ function buildPresetRow(layer, initialIndex, onChange, signal) {
 
   function updateTrigger() {
     const preset = PRESETS[currentIndex];
+    if (!preset) return;
     label.textContent = preset.name;
     swatch.style.backgroundColor = swatchColor(preset.hue, preset.sat, preset.luminance);
   }
@@ -960,8 +961,10 @@ function buildPresetRow(layer, initialIndex, onChange, signal) {
   row.appendChild(nextBtn);
 
   function setValue(idx) {
-    currentIndex = idx;
-    updateTrigger();
+    if (idx >= 0 && idx < PRESETS.length) {
+      currentIndex = idx;
+      updateTrigger();
+    }
   }
 
   return { el: row, setValue };
