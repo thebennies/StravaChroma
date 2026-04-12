@@ -1,6 +1,6 @@
 import './styles.css';
 import { appState, setState, subscribe } from './state.js';
-import { PRESETS, COLORWAYS, LARGE_IMAGE_MEGAPIXELS, DEFAULT_MAP_PRESET, DEFAULT_DATA_PRESET, DEFAULT_LABEL_PRESET } from './constants.js';
+import { PRESETS, COLORWAYS, DEFAULT_MAP_PRESET, DEFAULT_DATA_PRESET, DEFAULT_LABEL_PRESET } from './constants.js';
 import { buildLayout } from './ui/layout.js';
 import { buildUploadPrompt, processFile, setupDragHighlight } from './ui/upload.js';
 import { buildDocsPage } from './ui/docs.js';
@@ -16,6 +16,19 @@ import { trackColorwaySelected, trackExport } from './analytics.js';
 
 initErrorHandling();
 
+// ── Filename sanitization helper ─────────────────────────────────────────────
+
+function sanitizeFilename(name) {
+  // Remove path components and control characters
+  // Keep only alphanumeric, spaces, hyphens, underscores, dots
+  return name
+    .replace(/\\/g, '/')
+    .split('/')
+    .pop()
+    .replace(/[<>",;:%|?*\x00-\x1F\x7F]/g, '')
+    .slice(0, 255); // Limit length
+}
+
 // ── Image session persistence (IndexedDB) ────────────────────────────────────
 
 const IDB_NAME  = 'stravachroma';
@@ -29,6 +42,14 @@ function openDB() {
     req.onsuccess  = () => resolve(req.result);
     req.onerror    = () => reject(req.error);
   });
+}
+
+async function clearImageSession() {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(IDB_KEY);
+  } catch { /* non-critical */ }
 }
 
 async function saveImageSession(pixelData, width, height) {
@@ -109,6 +130,11 @@ function handleWorkerCrash() {
       isRendering: false, 
       isExporting: false 
     });
+    // Clear any pending export timeout to prevent memory leak and double-rejection
+    if (pendingExportTimeout) {
+      clearTimeout(pendingExportTimeout);
+      pendingExportTimeout = null;
+    }
     if (pendingExport) {
       const { reject } = pendingExport;
       pendingExport = null;
@@ -304,8 +330,8 @@ function handleFileLoad(file, pixelData, width, height) {
     isRendering:        false,
   });
 
-  // Update canvas label with filename for accessibility
-  setCanvasLabel(file.name);
+  // Update canvas label with sanitized filename for accessibility
+  setCanvasLabel(sanitizeFilename(file.name));
 
   requestClassification(pixelData, width, height);
   saveImageSession(pixelData, width, height);
