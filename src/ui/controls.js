@@ -235,6 +235,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-controls', `tab-panel-${id}`);
     btn.addEventListener('click', () => activateTab(id));
+    btn.addEventListener('keydown', handleTabKeydown);
     tabsWrapper.appendChild(btn);
     return btn;
   });
@@ -247,6 +248,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
       const isActive = tabDefs[i].id === id;
       btn.className = isActive ? tabBtnActiveClass() : tabBtnInactiveClass();
       btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      btn.setAttribute('tabindex', isActive ? '0' : '-1');
       btn.style.borderImage = isActive
         ? 'linear-gradient(135deg, #F04A00 0%, #C0349A 55%, #7B2FBE 100%) 1'
         : '';
@@ -260,6 +262,38 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
         panel.style.display = 'none';
       }
     });
+  }
+
+  function handleTabKeydown(e) {
+    const currentIndex = tabBtns.findIndex(btn => btn.id === `tab-btn-${activeTabId}`);
+    let newIndex;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        newIndex = currentIndex <= 0 ? tabBtns.length - 1 : currentIndex - 1;
+        activateTab(tabDefs[newIndex].id);
+        tabBtns[newIndex].focus();
+        break;
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        newIndex = currentIndex >= tabBtns.length - 1 ? 0 : currentIndex + 1;
+        activateTab(tabDefs[newIndex].id);
+        tabBtns[newIndex].focus();
+        break;
+      case 'Home':
+        e.preventDefault();
+        activateTab(tabDefs[0].id);
+        tabBtns[0].focus();
+        break;
+      case 'End':
+        e.preventDefault();
+        activateTab(tabDefs[tabBtns.length - 1].id);
+        tabBtns[tabBtns.length - 1].focus();
+        break;
+    }
   }
 
   container.appendChild(tabBar);
@@ -1066,9 +1100,19 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   closeBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
   closeBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
   closeBtn.setAttribute('aria-label', 'Close modal');
-  closeBtn.addEventListener('click', () => {
+  
+  // Store trigger element for focus return
+  let groupModalTrigger = null;
+  
+  function closeGroupModal() {
     modalOverlay.style.display = 'none';
-  });
+    if (groupModalTrigger) {
+      groupModalTrigger.focus();
+      groupModalTrigger = null;
+    }
+  }
+  
+  closeBtn.addEventListener('click', closeGroupModal);
 
   modalHeader.appendChild(modalTitle);
   modalHeader.appendChild(closeBtn);
@@ -1162,14 +1206,14 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   // Close modal on overlay click
   modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) {
-      modalOverlay.style.display = 'none';
+      closeGroupModal();
     }
   });
 
   // Close modal on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modalOverlay.style.display !== 'none') {
-      modalOverlay.style.display = 'none';
+      closeGroupModal();
     }
   }, signal ? { signal } : undefined);
 
@@ -1183,9 +1227,13 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Open modal on group button click
   groupBtn.addEventListener('click', () => {
+    // Store trigger for focus return
+    groupModalTrigger = groupBtn;
     // Refresh checkboxes state
     groupCheckboxes.forEach(({ group, updateCheckbox }) => updateCheckbox());
     modalOverlay.style.display = 'flex';
+    // Move focus to close button
+    requestAnimationFrame(() => closeBtn.focus());
   });
 
   // Favorites modal
@@ -1212,9 +1260,19 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   favCloseBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
   favCloseBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
   favCloseBtn.setAttribute('aria-label', 'Close favorites modal');
-  favCloseBtn.addEventListener('click', () => {
+  
+  // Store trigger element for focus return
+  let favModalTrigger = null;
+  
+  function closeFavModal() {
     favModalOverlay.style.display = 'none';
-  });
+    if (favModalTrigger) {
+      favModalTrigger.focus();
+      favModalTrigger = null;
+    }
+  }
+  
+  favCloseBtn.addEventListener('click', closeFavModal);
 
   favModalHeader.appendChild(favModalTitle);
   favModalHeader.appendChild(favCloseBtn);
@@ -1372,21 +1430,24 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Open favorites modal
   favBtn.addEventListener('click', () => {
+    favModalTrigger = favBtn;
     renderFavoritesModal();
     favModalOverlay.style.display = 'flex';
+    // Move focus to close button
+    requestAnimationFrame(() => favCloseBtn.focus());
   });
 
   // Close favorites modal on overlay click
   favModalOverlay.addEventListener('click', (e) => {
     if (e.target === favModalOverlay) {
-      favModalOverlay.style.display = 'none';
+      closeFavModal();
     }
   });
 
   // Close favorites modal on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && favModalOverlay.style.display !== 'none') {
-      favModalOverlay.style.display = 'none';
+      closeFavModal();
     }
   }, signal ? { signal } : undefined);
 
@@ -1415,9 +1476,19 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   searchCloseBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
   searchCloseBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
   searchCloseBtn.setAttribute('aria-label', 'Close search modal');
-  searchCloseBtn.addEventListener('click', () => {
+  
+  // Store trigger element for focus return
+  let searchModalTrigger = null;
+  
+  function closeSearchModal() {
     searchModalOverlay.style.display = 'none';
-  });
+    if (searchModalTrigger) {
+      searchModalTrigger.focus();
+      searchModalTrigger = null;
+    }
+  }
+  
+  searchCloseBtn.addEventListener('click', closeSearchModal);
 
   searchModalHeader.appendChild(searchModalTitle);
   searchModalHeader.appendChild(searchCloseBtn);
@@ -1432,6 +1503,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   const searchInput = document.createElement('input');
   searchInput.type = 'text';
   searchInput.placeholder = 'Search colorway name...';
+  searchInput.setAttribute('aria-label', 'Search colorways by name');
   searchInput.className = [
     'w-full bg-surface-variant border border-border rounded-lg',
     'px-3 py-2 pr-10 text-sm text-text-primary',
@@ -1584,6 +1656,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Open search modal on search button click
   searchBtn.addEventListener('click', () => {
+    searchModalTrigger = searchBtn;
     const savedTerm = getSavedSearchTerm();
     searchInput.value = savedTerm;
     clearSearchBtn.style.display = savedTerm ? 'block' : 'none';
@@ -1595,14 +1668,14 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   // Close search modal on overlay click
   searchModalOverlay.addEventListener('click', (e) => {
     if (e.target === searchModalOverlay) {
-      searchModalOverlay.style.display = 'none';
+      closeSearchModal();
     }
   });
 
   // Close search modal on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && searchModalOverlay.style.display !== 'none') {
-      searchModalOverlay.style.display = 'none';
+      closeSearchModal();
     }
   }, signal ? { signal } : undefined);
 
