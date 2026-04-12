@@ -176,6 +176,16 @@ export function buildDocsPage({ onClose } = {}) {
   // Changelog Section
   content.appendChild(buildSection('Changelog', 'changelog', ICONS.changelog, [
     buildSubsection(`v${APP_VERSION}`, `
+      • CalVer versioning — dates instead of arbitrary numbers
+      • Colorway search — Cmd/Ctrl+K to find palettes fast
+      • Colorway favorites — heart your go-to palettes
+      • Drop shadow effect — polish your exports
+      • Group selection modal — curate your sidebar
+      • New colorways — Kopi (coffee) & Comics/TMNT themes
+      • Pink primary palette — fresh coat of paint
+      • Mobile tab reorder — Colorways now default on small screens
+    `),
+    buildSubsection('v2026.04.0', `
       Initial release of StravaChroma.
       • Automatic layer detection (map, data, labels)
       • Color adjustment with HSL sliders
