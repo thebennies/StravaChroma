@@ -114,8 +114,8 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
 
   const desktopColorwaysSection = document.createElement('div');
   desktopColorwaysSection.className = 'border-b border-border';
-  const desktopColorwaysHeading = document.createElement('p');
-  desktopColorwaysHeading.className = 'px-5 pt-4 pb-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
+  const desktopColorwaysHeading = document.createElement('h2');
+  desktopColorwaysHeading.className = 'px-5 pt-4 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
   desktopColorwaysHeading.textContent = 'Colorways';
   const { el: desktopColorwaysInner, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { onSwap, signal });
   desktopColorwaysSection.appendChild(desktopColorwaysHeading);
@@ -210,6 +210,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
   tabDefs.forEach(({ id, panel }) => {
     panel.id = `tab-panel-${id}`;
     panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', `tab-btn-${id}`);
     panel.style.position = 'absolute';
     panel.style.top = '0';
     panel.style.left = '0';
@@ -229,10 +230,12 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
 
   const tabBtns = tabDefs.map(({ id, label }) => {
     const btn = document.createElement('button');
+    btn.id = `tab-btn-${id}`;
     btn.textContent = label;
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-controls', `tab-panel-${id}`);
     btn.addEventListener('click', () => activateTab(id));
+    btn.addEventListener('keydown', handleTabKeydown);
     tabsWrapper.appendChild(btn);
     return btn;
   });
@@ -245,6 +248,7 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
       const isActive = tabDefs[i].id === id;
       btn.className = isActive ? tabBtnActiveClass() : tabBtnInactiveClass();
       btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      btn.setAttribute('tabindex', isActive ? '0' : '-1');
       btn.style.borderImage = isActive
         ? 'linear-gradient(135deg, #F04A00 0%, #C0349A 55%, #7B2FBE 100%) 1'
         : '';
@@ -258,6 +262,38 @@ function buildMobileTabs(container, { mapSection, dataSection, labelSection, onR
         panel.style.display = 'none';
       }
     });
+  }
+
+  function handleTabKeydown(e) {
+    const currentIndex = tabBtns.findIndex(btn => btn.id === `tab-btn-${activeTabId}`);
+    let newIndex;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        e.preventDefault();
+        newIndex = currentIndex <= 0 ? tabBtns.length - 1 : currentIndex - 1;
+        activateTab(tabDefs[newIndex].id);
+        tabBtns[newIndex].focus();
+        break;
+      case 'ArrowRight':
+      case 'ArrowDown':
+        e.preventDefault();
+        newIndex = currentIndex >= tabBtns.length - 1 ? 0 : currentIndex + 1;
+        activateTab(tabDefs[newIndex].id);
+        tabBtns[newIndex].focus();
+        break;
+      case 'Home':
+        e.preventDefault();
+        activateTab(tabDefs[0].id);
+        tabBtns[0].focus();
+        break;
+      case 'End':
+        e.preventDefault();
+        activateTab(tabDefs[tabBtns.length - 1].id);
+        tabBtns[tabBtns.length - 1].focus();
+        break;
+    }
   }
 
   container.appendChild(tabBar);
@@ -360,8 +396,8 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   const separator = document.createElement('div');
   separator.className = 'border-t border-border mx-4';
 
-  const bgHeading = document.createElement('p');
-  bgHeading.className = 'px-4 pt-3 pb-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
+  const bgHeading = document.createElement('h2');
+  bgHeading.className = 'px-4 pt-3 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
   bgHeading.textContent = 'Background';
 
   const bgGrid = document.createElement('div');
@@ -437,9 +473,13 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
 
   function updateCards() {
     darkCard.className  = bgCardClass(localBackground === 'black');
+    darkCard.setAttribute('aria-pressed', String(localBackground === 'black'));
     lightCard.className = bgCardClass(localBackground === 'white');
+    lightCard.setAttribute('aria-pressed', String(localBackground === 'white'));
     autoCard.className  = bgCardClass(localBackground === 'auto');
+    autoCard.setAttribute('aria-pressed', String(localBackground === 'auto'));
     imageCard.className = bgCardClass(localBackground === 'image');
+    imageCard.setAttribute('aria-pressed', String(localBackground === 'image'));
     imageCard.setAttribute('aria-label', localCustomImage ? 'Clear background image' : 'Set background image');
     imageCard.innerHTML = localCustomImage
       ? `${SVG_X}<span>Clear</span>`
@@ -465,8 +505,8 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   const effectsSeparator = document.createElement('div');
   effectsSeparator.className = 'border-t border-border mx-4';
 
-  const effectsHeading = document.createElement('p');
-  effectsHeading.className = 'px-4 pt-3 pb-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
+  const effectsHeading = document.createElement('h2');
+  effectsHeading.className = 'px-4 pt-3 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
   effectsHeading.textContent = 'Effects';
 
   const effectsGrid = document.createElement('div');
@@ -536,8 +576,8 @@ function buildLayerSection(title, layer, { initialHue, initialSat, initialLumina
   section.className = 'px-5 py-4 border-b border-border';
 
   // Section title
-  const heading = document.createElement('p');
-  heading.className = 'text-xs font-semibold tracking-wide uppercase text-text-secondary mb-4';
+  const heading = document.createElement('h2');
+  heading.className = 'text-sm font-semibold tracking-wide uppercase text-text-secondary mb-4';
   heading.textContent = title;
   section.appendChild(heading);
 
@@ -960,8 +1000,8 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       const originalIdx = colorwayPresets.indexOf(colorway);
 
       if (colorway.group !== currentGroup) {
-        const groupHeader = document.createElement('p');
-        groupHeader.className = 'mt-1 text-xs font-semibold tracking-wide uppercase text-text-secondary';
+        const groupHeader = document.createElement('h3');
+        groupHeader.className = 'mt-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
         groupHeader.textContent = colorway.group;
         list.appendChild(groupHeader);
         currentGroup = colorway.group;
@@ -970,6 +1010,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       const item = document.createElement('button');
       item.className = colorwayItemClass(false);
       item.setAttribute('aria-label', `Apply ${colorway.name} colorway`);
+      item.setAttribute('aria-pressed', 'false');
 
       const nameEl = document.createElement('span');
       nameEl.className = 'text-sm font-medium flex-1 truncate';
@@ -985,7 +1026,8 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
         const dot = document.createElement('span');
         dot.className = 'w-4 h-4 rounded-sm border border-white/20 flex-shrink-0';
         dot.style.backgroundColor = swatchColor(layer.hue, layer.sat, layer.luminance);
-        dot.title = title;
+        dot.setAttribute('role', 'img');
+        dot.setAttribute('aria-label', `${title} color: ${swatchColor(layer.hue, layer.sat, layer.luminance)}`);
         swatches.appendChild(dot);
       });
 
@@ -1007,6 +1049,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       if (matching) {
         activeEl = matching.el;
         activeEl.className = colorwayItemClass(true);
+        activeEl.setAttribute('aria-current', 'true');
         attachHeartToRow(activeEl, colorwayPresets[activeIdx]);
       } else {
         activeEl = null;
@@ -1036,15 +1079,20 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   const modalOverlay = document.createElement('div');
   modalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
   modalOverlay.style.display = 'none';
+  modalOverlay.setAttribute('aria-modal', 'true');
 
   const modalContent = document.createElement('div');
   modalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[60vh]';
+  modalContent.setAttribute('role', 'dialog');
+  modalContent.setAttribute('aria-modal', 'true');
+  modalContent.setAttribute('aria-labelledby', 'group-modal-title');
 
   // Modal header
   const modalHeader = document.createElement('div');
   modalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
 
   const modalTitle = document.createElement('h3');
+  modalTitle.id = 'group-modal-title';
   modalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
   modalTitle.innerHTML = `<i data-lucide="layers" class="w-4 h-4 flex-shrink-0"></i><span>Colorway Groups</span>`;
 
@@ -1052,9 +1100,19 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   closeBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
   closeBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
   closeBtn.setAttribute('aria-label', 'Close modal');
-  closeBtn.addEventListener('click', () => {
+  
+  // Store trigger element for focus return
+  let groupModalTrigger = null;
+  
+  function closeGroupModal() {
     modalOverlay.style.display = 'none';
-  });
+    if (groupModalTrigger) {
+      groupModalTrigger.focus();
+      groupModalTrigger = null;
+    }
+  }
+  
+  closeBtn.addEventListener('click', closeGroupModal);
 
   modalHeader.appendChild(modalTitle);
   modalHeader.appendChild(closeBtn);
@@ -1082,21 +1140,15 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   ALL_GROUPS.forEach(group => {
     const isMandatory = group === MANDATORY_GROUP;
-    const row = document.createElement('div');
+    const row = document.createElement('label');
     row.className = 'flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-surface-variant cursor-pointer';
 
-    const checkbox = document.createElement('div');
-    checkbox.className = `w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-      isMandatory
-        ? 'bg-primary border-primary cursor-not-allowed'
-        : 'border-border bg-surface'
-    }`;
-
-    const checkIcon = document.createElement('span');
-    checkIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-    checkIcon.className = isMandatory ? 'text-white' : 'text-white opacity-0';
-
-    checkbox.appendChild(checkIcon);
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'w-5 h-5 rounded border border-border bg-surface checked:bg-primary checked:border-primary text-white focus:ring-2 focus:ring-primary focus:ring-offset-0 focus:ring-offset-transparent';
+    checkbox.checked = selectedGroups.includes(group);
+    checkbox.disabled = isMandatory;
+    checkbox.setAttribute('aria-label', `Show colorways from ${group} group`);
 
     const label = document.createElement('span');
     label.className = 'text-sm text-text-primary flex-1';
@@ -1115,27 +1167,17 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
     }
 
     function updateCheckbox() {
-      const isChecked = selectedGroups.includes(group);
-      if (isChecked) {
-        checkbox.classList.remove('border-border', 'bg-surface');
-        checkbox.classList.add('bg-primary', 'border-primary');
-        checkIcon.classList.remove('opacity-0');
-      } else {
-        checkbox.classList.add('border-border', 'bg-surface');
-        checkbox.classList.remove('bg-primary', 'border-primary');
-        checkIcon.classList.add('opacity-0');
-      }
+      checkbox.checked = selectedGroups.includes(group);
     }
 
-    row.addEventListener('click', () => {
+    checkbox.addEventListener('change', () => {
       if (isMandatory) return;
-      if (selectedGroups.includes(group)) {
-        selectedGroups = selectedGroups.filter(g => g !== group);
-      } else {
+      if (checkbox.checked) {
         selectedGroups = [...selectedGroups, group];
+      } else {
+        selectedGroups = selectedGroups.filter(g => g !== group);
       }
       saveGroupSelection(selectedGroups);
-      updateCheckbox();
       refreshFilteredColorways();
       renderList();
     });
@@ -1164,14 +1206,14 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   // Close modal on overlay click
   modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) {
-      modalOverlay.style.display = 'none';
+      closeGroupModal();
     }
   });
 
   // Close modal on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modalOverlay.style.display !== 'none') {
-      modalOverlay.style.display = 'none';
+      closeGroupModal();
     }
   }, signal ? { signal } : undefined);
 
@@ -1185,23 +1227,32 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Open modal on group button click
   groupBtn.addEventListener('click', () => {
+    // Store trigger for focus return
+    groupModalTrigger = groupBtn;
     // Refresh checkboxes state
     groupCheckboxes.forEach(({ group, updateCheckbox }) => updateCheckbox());
     modalOverlay.style.display = 'flex';
+    // Move focus to close button
+    requestAnimationFrame(() => closeBtn.focus());
   });
 
   // Favorites modal
   const favModalOverlay = document.createElement('div');
   favModalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
   favModalOverlay.style.display = 'none';
+  favModalOverlay.setAttribute('aria-modal', 'true');
 
   const favModalContent = document.createElement('div');
   favModalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[70vh]';
+  favModalContent.setAttribute('role', 'dialog');
+  favModalContent.setAttribute('aria-modal', 'true');
+  favModalContent.setAttribute('aria-labelledby', 'fav-modal-title');
 
   const favModalHeader = document.createElement('div');
   favModalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
 
   const favModalTitle = document.createElement('h3');
+  favModalTitle.id = 'fav-modal-title';
   favModalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
   favModalTitle.innerHTML = `${SVG_HEART_FILLED}<span>Favorites</span>`;
 
@@ -1209,9 +1260,19 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   favCloseBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
   favCloseBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
   favCloseBtn.setAttribute('aria-label', 'Close favorites modal');
-  favCloseBtn.addEventListener('click', () => {
+  
+  // Store trigger element for focus return
+  let favModalTrigger = null;
+  
+  function closeFavModal() {
     favModalOverlay.style.display = 'none';
-  });
+    if (favModalTrigger) {
+      favModalTrigger.focus();
+      favModalTrigger = null;
+    }
+  }
+  
+  favCloseBtn.addEventListener('click', closeFavModal);
 
   favModalHeader.appendChild(favModalTitle);
   favModalHeader.appendChild(favCloseBtn);
@@ -1281,8 +1342,8 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
       const originalIdx = colorwayPresets.indexOf(colorway);
 
       if (colorway.group !== currentFavGroup) {
-        const groupHeader = document.createElement('p');
-        groupHeader.className = 'mt-1 text-xs font-semibold tracking-wide uppercase text-text-secondary px-1';
+        const groupHeader = document.createElement('h3');
+        groupHeader.className = 'mt-1 text-sm font-semibold tracking-wide uppercase text-text-secondary px-1';
         groupHeader.textContent = colorway.group;
         favResultsContainer.appendChild(groupHeader);
         currentFavGroup = colorway.group;
@@ -1376,21 +1437,24 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Open favorites modal
   favBtn.addEventListener('click', () => {
+    favModalTrigger = favBtn;
     renderFavoritesModal();
     favModalOverlay.style.display = 'flex';
+    // Move focus to close button
+    requestAnimationFrame(() => favCloseBtn.focus());
   });
 
   // Close favorites modal on overlay click
   favModalOverlay.addEventListener('click', (e) => {
     if (e.target === favModalOverlay) {
-      favModalOverlay.style.display = 'none';
+      closeFavModal();
     }
   });
 
   // Close favorites modal on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && favModalOverlay.style.display !== 'none') {
-      favModalOverlay.style.display = 'none';
+      closeFavModal();
     }
   }, signal ? { signal } : undefined);
 
@@ -1398,15 +1462,20 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   const searchModalOverlay = document.createElement('div');
   searchModalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
   searchModalOverlay.style.display = 'none';
+  searchModalOverlay.setAttribute('aria-modal', 'true');
 
   const searchModalContent = document.createElement('div');
   searchModalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[70vh]';
+  searchModalContent.setAttribute('role', 'dialog');
+  searchModalContent.setAttribute('aria-modal', 'true');
+  searchModalContent.setAttribute('aria-labelledby', 'search-modal-title');
 
   // Search modal header
   const searchModalHeader = document.createElement('div');
   searchModalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
 
   const searchModalTitle = document.createElement('h3');
+  searchModalTitle.id = 'search-modal-title';
   searchModalTitle.className = 'flex items-center gap-2 text-sm font-semibold text-text-primary';
   searchModalTitle.innerHTML = `<i data-lucide="search" class="w-4 h-4 flex-shrink-0"></i><span>Search Colorways</span>`;
 
@@ -1414,9 +1483,19 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   searchCloseBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
   searchCloseBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
   searchCloseBtn.setAttribute('aria-label', 'Close search modal');
-  searchCloseBtn.addEventListener('click', () => {
+  
+  // Store trigger element for focus return
+  let searchModalTrigger = null;
+  
+  function closeSearchModal() {
     searchModalOverlay.style.display = 'none';
-  });
+    if (searchModalTrigger) {
+      searchModalTrigger.focus();
+      searchModalTrigger = null;
+    }
+  }
+  
+  searchCloseBtn.addEventListener('click', closeSearchModal);
 
   searchModalHeader.appendChild(searchModalTitle);
   searchModalHeader.appendChild(searchCloseBtn);
@@ -1431,6 +1510,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   const searchInput = document.createElement('input');
   searchInput.type = 'text';
   searchInput.placeholder = 'Search colorway name...';
+  searchInput.setAttribute('aria-label', 'Search colorways by name');
   searchInput.className = [
     'w-full bg-surface-variant border border-border rounded-lg',
     'px-3 py-2 pr-10 text-sm text-text-primary',
@@ -1583,6 +1663,7 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
 
   // Open search modal on search button click
   searchBtn.addEventListener('click', () => {
+    searchModalTrigger = searchBtn;
     const savedTerm = getSavedSearchTerm();
     searchInput.value = savedTerm;
     clearSearchBtn.style.display = savedTerm ? 'block' : 'none';
@@ -1594,14 +1675,14 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
   // Close search modal on overlay click
   searchModalOverlay.addEventListener('click', (e) => {
     if (e.target === searchModalOverlay) {
-      searchModalOverlay.style.display = 'none';
+      closeSearchModal();
     }
   });
 
   // Close search modal on Escape key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && searchModalOverlay.style.display !== 'none') {
-      searchModalOverlay.style.display = 'none';
+      closeSearchModal();
     }
   }, signal ? { signal } : undefined);
 

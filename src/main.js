@@ -4,7 +4,7 @@ import { PRESETS, COLORWAYS, LARGE_IMAGE_MEGAPIXELS, DEFAULT_MAP_PRESET, DEFAULT
 import { buildLayout } from './ui/layout.js';
 import { buildUploadPrompt, processFile, setupDragHighlight } from './ui/upload.js';
 import { buildDocsPage } from './ui/docs.js';
-import { buildCanvas, drawImageData, fitToCanvas, showCheckerboard, setCanvasBackground, setClassifyOverlay, setRenderSpinner, setDropShadow } from './ui/canvas.js';
+import { buildCanvas, drawImageData, fitToCanvas, showCheckerboard, setCanvasBackground, setClassifyOverlay, setRenderSpinner, setDropShadow, setCanvasLabel } from './ui/canvas.js';
 import { buildControls, buildActions } from './ui/controls.js';
 import { downloadExport } from './export.js';
 import { toast } from './ui/toast.js';
@@ -297,6 +297,9 @@ function handleFileLoad(file, pixelData, width, height) {
     isClassifying:      true,
     isRendering:        false,
   });
+
+  // Update canvas label with filename for accessibility
+  setCanvasLabel(file.name);
 
   requestClassification(pixelData, width, height);
   saveImageSession(pixelData, width, height);
