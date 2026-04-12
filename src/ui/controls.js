@@ -104,7 +104,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
   });
 
   if (isMobile) {
-    return buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, signal });
+    return buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, signal });
   }
 
   // ── Desktop: all sections stacked ──────────────────────────────────────────
