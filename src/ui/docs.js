@@ -80,10 +80,14 @@ export function buildDocsPage({ onClose } = {}) {
   const title = document.createElement('h1');
   title.className = 'text-3xl font-bold mb-2';
   title.innerHTML = 'Strava<span class="text-gradient">Chroma</span> Docs';
+  const versionDisplay = document.createElement('p');
+  versionDisplay.className = 'text-base font-bold text-white mt-4';
+  versionDisplay.textContent = `v${APP_VERSION}`;
   const subtitle = document.createElement('p');
-  subtitle.className = 'text-text-secondary';
+  subtitle.className = 'text-text-secondary mt-2';
   subtitle.textContent = 'Documentation and help center';
   header.appendChild(title);
+  header.appendChild(versionDisplay);
   header.appendChild(subtitle);
   content.appendChild(header);
 
@@ -210,15 +214,6 @@ export function buildDocsPage({ onClose } = {}) {
     buildSubsection('Open Source', buildOpenSourceLinks()),
     buildSubsection('Maker', buildDeveloperCard()),
   ]));
-
-  // Docs footer with version
-  const docsFooter = document.createElement('footer');
-  docsFooter.className = 'max-w-2xl mx-auto px-6 pb-12 text-center';
-  const versionLine = document.createElement('p');
-  versionLine.className = 'text-xs text-text-muted';
-  versionLine.textContent = `v${APP_VERSION}`;
-  docsFooter.appendChild(versionLine);
-  content.appendChild(docsFooter);
 
   container.appendChild(content);
 
