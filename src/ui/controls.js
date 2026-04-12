@@ -83,6 +83,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
     presetIndex: 0,
     onSliderChange,
     onPresetChange,
+    signal,
   });
 
   const dataSection = buildLayerSection('Data', 'data', {
@@ -92,6 +93,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
     presetIndex: DEFAULT_DATA_PRESET,
     onSliderChange,
     onPresetChange,
+    signal,
   });
 
   const labelSection = buildLayerSection('Label', 'label', {
@@ -101,6 +103,7 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
     presetIndex: DEFAULT_LABEL_PRESET,
     onSliderChange,
     onPresetChange,
+    signal,
   });
 
   if (isMobile) {
@@ -507,7 +510,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
 
   const effectsHeading = document.createElement('h2');
   effectsHeading.className = 'px-4 pt-3 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
-  effectsHeading.textContent = 'Effects';
+  effectsHeading.textContent = 'Experimental';
 
   const effectsGrid = document.createElement('div');
   effectsGrid.className = 'grid grid-cols-4 gap-2 px-4 pb-4';
@@ -571,7 +574,7 @@ function saveBtnClass(disabled) {
 
 // ── Shared section builder ────────────────────────────────────────────────────
 
-function buildLayerSection(title, layer, { initialHue, initialSat, initialLuminance, presetIndex, onSliderChange, onPresetChange }) {
+function buildLayerSection(title, layer, { initialHue, initialSat, initialLuminance, presetIndex, onSliderChange, onPresetChange, signal }) {
   const section = document.createElement('div');
   section.className = 'px-5 py-4 border-b border-border';
 
@@ -620,7 +623,7 @@ function buildLayerSection(title, layer, { initialHue, initialSat, initialLumina
   // Preset picker row
   const presetRow = buildPresetRow(layer, presetIndex, (idx) => {
     onPresetChange(layer, idx);
-  });
+  }, signal);
   section.appendChild(presetRow.el);
 
   function update({ hue, sat, luminance, selectedPreset }) {
@@ -740,39 +743,199 @@ function buildSliderRow(id, label, min, max, initial, type, layer, onChange) {
   return { el: row, setValue, updateTrack };
 }
 
-function buildPresetRow(layer, initialIndex, onChange) {
+function buildPresetRow(layer, initialIndex, onChange, signal) {
   const row = document.createElement('div');
   row.className = 'flex items-center gap-2';
 
-  const select = document.createElement('select');
-  select.id = `${layer}-preset-select`;
-  select.className = [
-    'flex-1 bg-surface-variant border border-border',
-    'text-xs text-text-primary',
-    'px-3 py-2 rounded-lg cursor-pointer',
-    'focus:outline-none focus:border-primary',
-    'appearance-none',
-  ].join(' ');
-  select.setAttribute('aria-label', `${layer} color preset`);
+  let currentIndex = initialIndex;
 
-  for (let i = 0; i < PRESETS.length; i++) {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = PRESETS[i].name;
-    if (i === initialIndex) opt.selected = true;
-    select.appendChild(opt);
+  // Trigger button that opens the color picker modal
+  const triggerBtn = document.createElement('button');
+  triggerBtn.id = `${layer}-preset-trigger`;
+  triggerBtn.className = [
+    'flex-1 bg-surface-variant border border-border',
+    'text-xs text-text-primary text-left',
+    'px-3 py-2 rounded-lg cursor-pointer',
+    'hover:border-primary/50 transition-colors',
+    'focus:outline-none focus:border-primary',
+    'flex items-center gap-2',
+  ].join(' ');
+  triggerBtn.setAttribute('aria-label', `${layer} color preset`);
+  triggerBtn.setAttribute('aria-haspopup', 'dialog');
+
+  // Swatch to show current color
+  const swatch = document.createElement('span');
+  swatch.className = 'w-4 h-4 rounded-sm border border-white/20 flex-shrink-0';
+  swatch.setAttribute('aria-hidden', 'true');
+
+  // Text label
+  const label = document.createElement('span');
+  label.className = 'flex-1 truncate';
+
+  // Dropdown arrow
+  const arrow = document.createElement('span');
+  arrow.className = 'text-text-secondary text-xs';
+  arrow.textContent = '\u25BE';
+  arrow.setAttribute('aria-hidden', 'true');
+
+  triggerBtn.appendChild(swatch);
+  triggerBtn.appendChild(label);
+  triggerBtn.appendChild(arrow);
+
+  function updateTrigger() {
+    const preset = PRESETS[currentIndex];
+    if (!preset) {
+      // Show blank/placeholder when no preset matches (e.g., custom colorway color)
+      label.textContent = '';
+      swatch.style.backgroundColor = 'transparent';
+      return;
+    }
+    label.textContent = preset.name;
+    swatch.style.backgroundColor = swatchColor(preset.hue, preset.sat, preset.luminance);
+  }
+  updateTrigger();
+
+  // Create modal
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
+  modalOverlay.style.display = 'none';
+  modalOverlay.setAttribute('aria-modal', 'true');
+
+  const modalContent = document.createElement('div');
+  modalContent.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden flex flex-col max-h-[70vh]';
+  modalContent.setAttribute('role', 'dialog');
+  modalContent.setAttribute('aria-modal', 'true');
+  modalContent.setAttribute('aria-labelledby', `${layer}-color-modal-title`);
+
+  // Modal header
+  const modalHeader = document.createElement('div');
+  modalHeader.className = 'flex items-center justify-between px-4 py-3 border-b border-border';
+
+  const modalTitle = document.createElement('h3');
+  modalTitle.id = `${layer}-color-modal-title`;
+  modalTitle.className = 'text-sm font-semibold text-text-primary';
+  modalTitle.textContent = `${layer.charAt(0).toUpperCase() + layer.slice(1)} Color`;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'text-text-secondary hover:text-text-primary transition-colors';
+  closeBtn.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i>`;
+  closeBtn.setAttribute('aria-label', 'Close color picker');
+
+  modalHeader.appendChild(modalTitle);
+  modalHeader.appendChild(closeBtn);
+
+  // Color list container
+  const colorList = document.createElement('div');
+  colorList.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2 flex flex-col gap-1';
+
+  // Use original PRESETS order (same as Mono colorway group - Strava Orange pinned first)
+  const sortedPresets = [...PRESETS].map((p, idx) => ({ ...p, originalIndex: idx }));
+
+  // Find the first neutral color (Black) to split the list
+  const firstNeutralIndex = sortedPresets.findIndex(p => p.name === 'Black');
+
+  // Add Colors section header
+  const colorsHeader = document.createElement('h4');
+  colorsHeader.className = 'text-xs font-semibold tracking-wide uppercase text-text-secondary px-1';
+  colorsHeader.textContent = 'Colors';
+  colorList.appendChild(colorsHeader);
+
+  sortedPresets.forEach((preset, idx) => {
+    // Add Neutrals section header at the split point
+    if (idx === firstNeutralIndex && firstNeutralIndex !== -1) {
+      const neutralsHeader = document.createElement('h4');
+      neutralsHeader.className = 'mt-2 text-xs font-semibold tracking-wide uppercase text-text-secondary px-1';
+      neutralsHeader.textContent = 'Neutrals';
+      colorList.appendChild(neutralsHeader);
+    }
+
+    const item = document.createElement('button');
+    item.className = colorwayItemClass(preset.originalIndex === currentIndex);
+    item.setAttribute('aria-label', `Select ${preset.name}`);
+    item.setAttribute('aria-pressed', preset.originalIndex === currentIndex ? 'true' : 'false');
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'text-sm font-medium flex-1 truncate';
+    nameEl.textContent = preset.name;
+
+    const itemSwatch = document.createElement('span');
+    itemSwatch.className = 'w-6 h-6 rounded-sm border border-white/20 flex-shrink-0';
+    itemSwatch.style.backgroundColor = swatchColor(preset.hue, preset.sat, preset.luminance);
+    itemSwatch.setAttribute('role', 'img');
+    itemSwatch.setAttribute('aria-label', `Color: ${preset.name}`);
+
+    item.appendChild(nameEl);
+    item.appendChild(itemSwatch);
+
+    item.addEventListener('click', () => {
+      currentIndex = preset.originalIndex;
+      updateTrigger();
+      // Update active state in list
+      Array.from(colorList.children).forEach(child => {
+        if (child.tagName === 'BUTTON') {
+          const isSelected = child === item;
+          child.className = colorwayItemClass(isSelected);
+          child.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+        }
+      });
+      onChange(preset.originalIndex);
+      closeModal();
+    });
+
+    colorList.appendChild(item);
+  });
+
+  modalContent.appendChild(modalHeader);
+  modalContent.appendChild(colorList);
+  modalOverlay.appendChild(modalContent);
+  row.appendChild(modalOverlay);
+
+  // Store trigger element for focus return
+  let modalTrigger = null;
+
+  function openModal() {
+    modalTrigger = triggerBtn;
+    modalOverlay.style.display = 'flex';
+    // Update active state in list
+    Array.from(colorList.children).forEach(child => {
+      if (child.tagName === 'BUTTON') {
+        const name = child.querySelector('span').textContent;
+        const preset = sortedPresets.find(p => p.name === name);
+        if (preset) {
+          const isSelected = preset.originalIndex === currentIndex;
+          child.className = colorwayItemClass(isSelected);
+          child.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+        }
+      }
+    });
+    // Move focus to close button
+    requestAnimationFrame(() => closeBtn.focus());
   }
 
-  // Wrapper for select with arrow
-  const selectWrapper = document.createElement('div');
-  selectWrapper.className = 'relative flex-1';
-  selectWrapper.appendChild(select);
+  function closeModal() {
+    modalOverlay.style.display = 'none';
+    if (modalTrigger) {
+      modalTrigger.focus();
+      modalTrigger = null;
+    }
+  }
 
-  const arrow = document.createElement('span');
-  arrow.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none text-xs';
-  arrow.setAttribute('aria-hidden', 'true');
-  arrow.textContent = '\u25BE';
-  selectWrapper.appendChild(arrow);
+  triggerBtn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+
+  // Close on overlay click
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+      closeModal();
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalOverlay.style.display !== 'none') {
+      closeModal();
+    }
+  }, signal ? { signal } : undefined);
 
   const prevBtn = document.createElement('button');
   prevBtn.className = navBtnClass();
@@ -786,30 +949,38 @@ function buildPresetRow(layer, initialIndex, onChange) {
   nextBtn.title = 'Next preset';
   nextBtn.setAttribute('aria-label', 'Next color preset');
 
-  select.addEventListener('change', () => {
-    onChange(Number(select.value));
-  });
-
   prevBtn.addEventListener('click', () => {
-    const cur = Number(select.value);
-    const next = (cur - 1 + PRESETS.length) % PRESETS.length;
-    select.value = next;
-    onChange(next);
+    // If no preset selected, start from the first one
+    if (currentIndex === -1) {
+      currentIndex = PRESETS.length - 1;
+    } else {
+      currentIndex = (currentIndex - 1 + PRESETS.length) % PRESETS.length;
+    }
+    updateTrigger();
+    onChange(currentIndex);
   });
 
   nextBtn.addEventListener('click', () => {
-    const cur = Number(select.value);
-    const next = (cur + 1) % PRESETS.length;
-    select.value = next;
-    onChange(next);
+    // If no preset selected, start from the first one
+    if (currentIndex === -1) {
+      currentIndex = 0;
+    } else {
+      currentIndex = (currentIndex + 1) % PRESETS.length;
+    }
+    updateTrigger();
+    onChange(currentIndex);
   });
 
   row.appendChild(prevBtn);
-  row.appendChild(selectWrapper);
+  row.appendChild(triggerBtn);
   row.appendChild(nextBtn);
 
   function setValue(idx) {
-    select.value = idx;
+    // Allow -1 (no selection / custom color) to clear the display
+    if (idx === -1 || (idx >= 0 && idx < PRESETS.length)) {
+      currentIndex = idx;
+      updateTrigger();
+    }
   }
 
   return { el: row, setValue };
