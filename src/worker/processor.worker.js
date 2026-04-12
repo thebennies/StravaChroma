@@ -316,29 +316,30 @@ function computeGradientColors(sliders, width, height) {
 
 /**
  * Build gradient lookup for a layer.
- * Creates three color stops: slightly darker, selected color, darker.
+ * Creates a smooth gradient: slightly darker -> selected color -> darker.
+ * Uses balanced offsets so the gradient flows naturally without a "hill" effect.
  */
 function buildLayerGradient(hue, sat, luminance) {
-  // Slightly darker (10% darker)
-  const darker1L = Math.max(0, luminance - 0.1);
-  // Darker at end (20% darker)
-  const darker2L = Math.max(0, luminance - 0.2);
+  // Start: slightly darker than selected (5% darker)
+  const startL = Math.max(0, luminance - 0.05);
+  // End: noticeably darker (15% darker)
+  const endL = Math.max(0, luminance - 0.15);
 
-  const [, g1R, g1G, g1B] = hslToRgb(hue, sat, darker1L);
-  const [, selR, selG, selB] = hslToRgb(hue, sat, luminance);
-  const [, g2R, g2G, g2B] = hslToRgb(hue, sat, darker2L);
+  const [, startR, startG, startB] = hslToRgb(hue, sat, startL);
+  const [, midR, midG, midB] = hslToRgb(hue, sat, luminance);
+  const [, endR, endG, endB] = hslToRgb(hue, sat, endL);
 
   return {
-    stop1: { r: g1R, g: g1G, b: g1B },
-    selected: { r: selR, g: selG, b: selB },
-    stop2: { r: g2R, g: g2G, b: g2B },
+    start: { r: startR, g: startG, b: startB, l: startL },
+    middle: { r: midR, g: midG, b: midB, l: luminance },
+    end: { r: endR, g: endG, b: endB, l: endL },
   };
 }
 
 /**
  * Get gradient color for a pixel based on its position.
  * Gradient is tilted 15 degrees from horizontal.
- * Uses linear interpolation between gradient stops based on position.
+ * Maps position to a smooth curve through three stops for natural shading.
  */
 function getGradientColor(layerGradient, pixelIndex, width, height) {
   const x = pixelIndex % width;
@@ -348,12 +349,10 @@ function getGradientColor(layerGradient, pixelIndex, width, height) {
   const angleRad = 15 * (Math.PI / 180);
 
   // Project (x, y) onto the gradient direction
-  // Gradient vector: (cos(angle), sin(angle))
   const gx = Math.cos(angleRad);
   const gy = Math.sin(angleRad);
 
-  // Normalize position to 0-1 range
-  // Project onto gradient direction to get position along the gradient
+  // Normalize position to 0-1 range along the gradient direction
   const maxProj = width * Math.abs(gx) + height * Math.abs(gy);
   const proj = x * gx + y * gy;
   let t = proj / maxProj;
@@ -361,24 +360,28 @@ function getGradientColor(layerGradient, pixelIndex, width, height) {
   // Clamp to 0-1
   t = Math.max(0, Math.min(1, t));
 
-  // Map to three-stop gradient:
-  // 0.0 -> 0.5: stop1 to selected
-  // 0.5 -> 1.0: selected to stop2
-  const { stop1, selected, stop2 } = layerGradient;
+  // Smooth step function for more natural transitions (ease-in-out)
+  // This prevents sharp changes at the stops
+  const smoothT = t * t * (3 - 2 * t);
+
+  // Three-stop gradient with middle at t=0.5:
+  // 0.0 -> 0.5: start to middle (slightly darker → selected)
+  // 0.5 -> 1.0: middle to end (selected → darker)
+  const { start, middle, end } = layerGradient;
 
   let r, g, b;
-  if (t < 0.5) {
-    // First half: stop1 -> selected
-    const localT = t * 2; // 0 to 1
-    r = Math.round(stop1.r + (selected.r - stop1.r) * localT);
-    g = Math.round(stop1.g + (selected.g - stop1.g) * localT);
-    b = Math.round(stop1.b + (selected.b - stop1.b) * localT);
+  if (smoothT < 0.5) {
+    // First half: start -> middle
+    const localT = smoothT * 2; // 0 to 1
+    r = Math.round(start.r + (middle.r - start.r) * localT);
+    g = Math.round(start.g + (middle.g - start.g) * localT);
+    b = Math.round(start.b + (middle.b - start.b) * localT);
   } else {
-    // Second half: selected -> stop2
-    const localT = (t - 0.5) * 2; // 0 to 1
-    r = Math.round(selected.r + (stop2.r - selected.r) * localT);
-    g = Math.round(selected.g + (stop2.g - selected.g) * localT);
-    b = Math.round(selected.b + (stop2.b - selected.b) * localT);
+    // Second half: middle -> end
+    const localT = (smoothT - 0.5) * 2; // 0 to 1
+    r = Math.round(middle.r + (end.r - middle.r) * localT);
+    g = Math.round(middle.g + (end.g - middle.g) * localT);
+    b = Math.round(middle.b + (end.b - middle.b) * localT);
   }
 
   return { r, g, b };
