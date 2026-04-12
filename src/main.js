@@ -62,6 +62,7 @@ let pendingClassification = null;
 
 let latestRequestId = 0;
 let pendingExport = null;
+let pendingExportTimeout = null;
 
 function nextRequestId() {
   return ++latestRequestId;
@@ -154,7 +155,11 @@ function handleWorkerMessage(e) {
 
     if (currentView === 'editor') {
       drawImageData(msg.pixelData, msg.width, msg.height);
-      fitToCanvas();
+      // Only fit canvas on first render to preserve user zoom/pan context
+      if (!hasFittedCanvas) {
+        fitToCanvas();
+        hasFittedCanvas = true;
+      }
     }
     return;
   }
@@ -223,6 +228,7 @@ let prevHasImage         = false;
 let prevCheckerShow      = false;
 let prevCheckerDark      = false;
 let prevDropShadowEnabled = false;
+let hasFittedCanvas      = false;
 
 // ── State subscription → DOM updates ─────────────────────────────────────────
 
@@ -463,7 +469,8 @@ async function handleExport() {
       }
       
       // Timeout fallback in case worker hangs
-      setTimeout(() => {
+      pendingExportTimeout = setTimeout(() => {
+        pendingExportTimeout = null;
         if (pendingExport) {
           pendingExport = null;
           reject(new Error('Export timed out'));
@@ -475,6 +482,12 @@ async function handleExport() {
     toast.error('Export failed. Please try again.');
     setState({ isExporting: false, isRendering: false });
     return;
+  } finally {
+    // Clear timeout on success or failure
+    if (pendingExportTimeout) {
+      clearTimeout(pendingExportTimeout);
+      pendingExportTimeout = null;
+    }
   }
 
   try {
@@ -595,6 +608,7 @@ function setupEditor() {
   prevCheckerShow = false;
   prevCheckerDark = false;
   prevDropShadowEnabled = false;
+  hasFittedCanvas = false;
 
   const controlsResult = buildControls(
     layout.controlsContainer,
@@ -608,7 +622,6 @@ function setupEditor() {
       initialDropShadow: appState.dropShadowEnabled,
       onGradientChange: handleGradientChange,
       initialGradient: appState.gradientEnabled,
-      onLogoChange: handleLogoChange,
       initialLogo: appState.showLogo,
       signal }
   );
