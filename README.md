@@ -73,6 +73,20 @@ pnpm preview   # serve the production build locally
 3. **Render** — the worker applies HSL shifts to each layer based on the current slider values and returns pixel data
 4. **Export** — re-renders at full resolution and triggers a PNG download
 
+## Versioning
+
+This project uses **CalVer** — `YYYY.MM.PATCH`.
+
+- `YYYY` — 4-digit year
+- `MM` — 2-digit month (01-12)
+- `PATCH` — starts at `0` each month; increments only when multiple releases ship in the same month
+
+The version is set in `package.json` and injected at build time by Vite, so it is frozen per build (no `new Date()` at runtime). To bump the version before a release:
+
+```bash
+pnpm run version:bump
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and coding conventions.
