@@ -4,7 +4,7 @@ import { PRESETS, COLORWAYS, LARGE_IMAGE_MEGAPIXELS, DEFAULT_MAP_PRESET, DEFAULT
 import { buildLayout } from './ui/layout.js';
 import { buildUploadPrompt, processFile, setupDragHighlight } from './ui/upload.js';
 import { buildDocsPage } from './ui/docs.js';
-import { buildCanvas, drawImageData, fitToCanvas, showCheckerboard, setCanvasBackground, setClassifyOverlay, setRenderSpinner, setDropShadow, setCanvasLabel } from './ui/canvas.js';
+import { buildCanvas, drawImageData, fitToCanvas, showCheckerboard, setCanvasBackground, setClassifyOverlay, setRenderSpinner, setDropShadow, setLogoOverlay, setCanvasLabel } from './ui/canvas.js';
 import { buildControls, buildActions } from './ui/controls.js';
 import { downloadExport } from './export.js';
 import { toast } from './ui/toast.js';
@@ -223,6 +223,7 @@ let prevHasImage         = false;
 let prevCheckerShow      = false;
 let prevCheckerDark      = false;
 let prevDropShadowEnabled = false;
+let prevShowLogo         = false;
 
 // ── State subscription → DOM updates ─────────────────────────────────────────
 
@@ -258,6 +259,12 @@ subscribe((state) => {
   if (state.dropShadowEnabled !== prevDropShadowEnabled) {
     prevDropShadowEnabled = state.dropShadowEnabled;
     setDropShadow(state.dropShadowEnabled);
+  }
+
+  // Handle logo overlay
+  if (state.showLogo !== prevShowLogo) {
+    prevShowLogo = state.showLogo;
+    setLogoOverlay(state.showLogo);
   }
 
   updateMapControls({
@@ -581,11 +588,13 @@ function setupEditor() {
   buildCanvas(layout.canvasPane);
   setCanvasBackground(appState.selectedBackground, appState.customImage);
   setDropShadow(appState.dropShadowEnabled);
+  setLogoOverlay(appState.showLogo);
 
   prevHasImage = false;
   prevCheckerShow = false;
   prevCheckerDark = false;
   prevDropShadowEnabled = false;
+  prevShowLogo = false;
 
   const controlsResult = buildControls(
     layout.controlsContainer,
