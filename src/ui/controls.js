@@ -560,8 +560,6 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
 
   // ── Logo toggle button ──────────────────────────────────────────────────────
 
-  let localShowLogo = initialLogo;
-
   const logoCard = document.createElement('button');
   logoCard.setAttribute('aria-label', 'Toggle StravaChroma logo on export');
   logoCard.setAttribute('aria-pressed', localShowLogo ? 'true' : 'false');
