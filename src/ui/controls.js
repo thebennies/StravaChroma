@@ -1268,6 +1268,13 @@ function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSw
     const available = resolved.filter(r => r.colorway !== null);
     const unavailable = resolved.filter(r => r.colorway === null);
 
+    // Sort available favorites by group name, then by colorway name
+    available.sort((a, b) => {
+      const groupCmp = a.colorway.group.localeCompare(b.colorway.group);
+      if (groupCmp !== 0) return groupCmp;
+      return a.colorway.name.localeCompare(b.colorway.name);
+    });
+
     let currentFavGroup = null;
 
     available.forEach(({ fav, colorway }) => {
