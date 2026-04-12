@@ -37,25 +37,25 @@ function buildDesktopLayout(app, { onStartOver, onDocs } = {}) {
   const titleRow = document.createElement('div');
   titleRow.className = 'flex items-center gap-3';
 
-  const logoIcon = document.createElement('img');
-  logoIcon.src = import.meta.env.BASE_URL + 'favicon.png';
-  logoIcon.alt = 'StravaChroma';
-  logoIcon.className = 'w-10 h-10 rounded-xl flex-shrink-0 cursor-pointer';
+  const logoIcon = document.createElement('button');
+  logoIcon.className = 'w-10 h-10 rounded-xl flex-shrink-0 cursor-pointer bg-transparent border-0 p-0';
   logoIcon.title = 'Start over';
+  logoIcon.setAttribute('aria-label', 'Start over');
+  const logoImg = document.createElement('img');
+  logoImg.src = import.meta.env.BASE_URL + 'favicon.png';
+  logoImg.alt = 'StravaChroma';
+  logoImg.className = 'w-10 h-10 rounded-xl';
+  logoIcon.appendChild(logoImg);
   if (onStartOver) {
     logoIcon.addEventListener('click', () => {
       if (confirm('Start over? Your current work will be lost.')) onStartOver();
     });
   }
 
-  const titleText = document.createElement('div');
-  titleText.className = 'cursor-pointer';
+  const titleText = document.createElement('button');
+  titleText.className = 'cursor-pointer bg-transparent border-0 p-0 text-left';
   titleText.title = 'Start over';
-  if (onStartOver) {
-    titleText.addEventListener('click', () => {
-      if (confirm('Start over? Your current work will be lost.')) onStartOver();
-    });
-  }
+  titleText.setAttribute('aria-label', 'Start over');
   const title = document.createElement('h1');
   title.className = 'text-lg font-bold text-text-primary leading-tight';
   title.innerHTML = 'Strava<span class="text-gradient">Chroma</span>';
@@ -118,20 +118,25 @@ function buildMobileLayout(app, { onStartOver, onDocs } = {}) {
     'px-4 py-3 bg-surface border-b border-border',
   ].join(' ');
 
-  const logoIcon = document.createElement('img');
-  logoIcon.src = import.meta.env.BASE_URL + 'favicon.png';
-  logoIcon.alt = 'StravaChroma';
-  logoIcon.className = 'w-8 h-8 rounded-lg flex-shrink-0 cursor-pointer';
+  const logoIcon = document.createElement('button');
+  logoIcon.className = 'w-8 h-8 rounded-lg flex-shrink-0 cursor-pointer bg-transparent border-0 p-0';
   logoIcon.title = 'Start over';
+  logoIcon.setAttribute('aria-label', 'Start over');
+  const logoImg = document.createElement('img');
+  logoImg.src = import.meta.env.BASE_URL + 'favicon.png';
+  logoImg.alt = 'StravaChroma';
+  logoImg.className = 'w-8 h-8 rounded-lg';
+  logoIcon.appendChild(logoImg);
   if (onStartOver) {
     logoIcon.addEventListener('click', () => {
       if (confirm('Start over? Your current work will be lost.')) onStartOver();
     });
   }
 
-  const title = document.createElement('span');
-  title.className = 'text-base font-bold text-text-primary cursor-pointer';
+  const title = document.createElement('button');
+  title.className = 'text-base font-bold text-text-primary cursor-pointer bg-transparent border-0 p-0';
   title.title = 'Start over';
+  title.setAttribute('aria-label', 'Start over');
   if (onStartOver) {
     title.addEventListener('click', () => {
       if (confirm('Start over? Your current work will be lost.')) onStartOver();
