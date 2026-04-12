@@ -510,7 +510,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
 
   const effectsHeading = document.createElement('h2');
   effectsHeading.className = 'px-4 pt-3 pb-1 text-sm font-semibold tracking-wide uppercase text-text-secondary';
-  effectsHeading.textContent = 'Effects';
+  effectsHeading.textContent = 'Experimental';
 
   const effectsGrid = document.createElement('div');
   effectsGrid.className = 'grid grid-cols-4 gap-2 px-4 pb-4';
