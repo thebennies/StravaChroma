@@ -4,11 +4,6 @@ let checkerboard = null;
 let renderSpinner = null;
 let classifyOverlay = null;
 let canvasPane = null;
-let logoOverlay = null;
-
-// Logo image cache
-let logoImage = null;
-let logoImageLoading = false;
 
 // Transform state
 let scale = 1;
@@ -190,56 +185,6 @@ export function setDropShadow(enabled) {
     canvas.style.filter = 'drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5))';
   } else {
     canvas.style.filter = '';
-  }
-}
-
-/**
- * Load the logo image for overlay
- */
-function loadLogoForOverlay() {
-  if (logoImage || logoImageLoading) return;
-  logoImageLoading = true;
-  
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    logoImage = img;
-    logoImageLoading = false;
-  };
-  img.onerror = () => {
-    logoImageLoading = false;
-  };
-  img.src = import.meta.env.BASE_URL + 'favicon.png';
-}
-
-/**
- * Shows/hides the StravaChroma logo overlay on the canvas.
- * Logo is positioned at 5% width, centered horizontally, 48px from bottom.
- * Logo is NOT affected by drop shadow (drawn after filter is cleared).
- */
-export function setLogoOverlay(enabled) {
-  if (!canvasPane) return;
-  
-  if (enabled) {
-    if (!logoOverlay) {
-      logoOverlay = document.createElement('img');
-      logoOverlay.className = 'absolute z-20 pointer-events-none';
-      logoOverlay.style.cssText = `
-        left: 50%;
-        bottom: 48px;
-        transform: translateX(-50%);
-        width: 5%;
-        height: auto;
-        object-fit: contain;
-      `;
-      logoOverlay.src = import.meta.env.BASE_URL + 'favicon.png';
-      logoOverlay.alt = 'StravaChroma logo';
-      canvasPane.appendChild(logoOverlay);
-      loadLogoForOverlay();
-    }
-    logoOverlay.style.display = '';
-  } else if (logoOverlay) {
-    logoOverlay.style.display = 'none';
   }
 }
 
