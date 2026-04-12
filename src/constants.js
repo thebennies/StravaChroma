@@ -559,9 +559,9 @@ export const COLORWAYS = [
   {
     name:  "Asics Cobalt Burst Orange",
     group: 'Running',
-    data:  { hue: 235, sat: 0.45, luminance: 0.28 },
-    map:   { hue: 18,  sat: 1.0,  luminance: 0.62 },
-    label: { hue: 187, sat: 0.78, luminance: 0.25 },
+    data:  { hue: 210, sat: 1.0, luminance: 0.40 },
+    map:   { hue: 25, sat: 1.0, luminance: 0.50 },
+    label: { hue: 150, sat: 1.0, luminance: 0.50 },
   },
   {
     name:  "Asics Ekiden Race",
