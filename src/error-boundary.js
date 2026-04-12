@@ -131,18 +131,18 @@ export function checkMemoryConstraints(fileSizeMB, width, height) {
   const pixelCount = width * height;
   const estimatedMemoryMB = (pixelCount * 4 * 3) / (1024 * 1024); // RGBA * 3 buffers
   
-  // Warn if estimated memory usage is high
-  if (estimatedMemoryMB > 500) {
-    toast.warning(`Large image may use ${Math.round(estimatedMemoryMB)}MB of memory. Processing may be slow.`);
-    return { allowed: true, warning: true };
-  }
-  
-  // Hard limit at 2GB estimated
+  // Check hard limit FIRST before any warnings
   if (estimatedMemoryMB > 2000) {
     return { 
       allowed: false, 
       error: `Image too large (would need ~${Math.round(estimatedMemoryMB)}MB). Maximum supported is ~2000MB.` 
     };
+  }
+  
+  // Warn if estimated memory usage is high (but still under hard limit)
+  if (estimatedMemoryMB > 500) {
+    toast.warning(`Large image may use ${Math.round(estimatedMemoryMB)}MB of memory. Processing may be slow.`);
+    return { allowed: true, warning: true };
   }
   
   return { allowed: true, warning: false };
