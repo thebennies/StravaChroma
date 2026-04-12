@@ -56,7 +56,16 @@ function showToast(message, type = 'info') {
     'transition-all duration-200 ease-out',
     'flex items-center gap-2',
   ].join(' ');
-  el.innerHTML = `<span aria-hidden="true">${config.icon}</span><span>${message}</span>`;
+  
+  // Security: Use textContent instead of innerHTML to prevent XSS
+  const iconSpan = document.createElement('span');
+  iconSpan.setAttribute('aria-hidden', 'true');
+  iconSpan.textContent = config.icon;
+  
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = message;
+  
+  el.append(iconSpan, msgSpan);
   
   // Accessibility: role="alert" for errors (interruptive), role="status" for info/warnings
   el.setAttribute('role', config.role);
