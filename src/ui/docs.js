@@ -1,12 +1,30 @@
 import { COLORWAYS } from '../constants.js';
+import { APP_VERSION } from '../version.js';
 
 const SCROLL_KEY = 'docs-scroll-y';
 
 const ICONS = {
   help: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+  colorways: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>',
   changelog: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
   about: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
   troubleshooting: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+};
+
+// Display metadata for each colorway group — update descriptions when adding new groups
+const GROUP_META = {
+  Mono:       { label: 'Mono',               description: 'Single-color tints applied uniformly across all layers' },
+  Running:    { label: 'Running',             description: 'Running shoe brand palettes (Adidas, Asics, Brooks, Hoka, NB, Nike, ON, Puma, Salomon, Saucony)' },
+  Sneakers:   { label: 'Sneakers',            description: 'Iconic sneaker colorways and silhouette-inspired palettes' },
+  Kopi:       { label: 'Kopi',               description: 'Southeast Asian kopi shop and coffee brand-inspired palettes' },
+  Brand:      { label: 'Brand',              description: 'Popular brand identity and logo colors' },
+  Luxury:     { label: 'Luxury',             description: 'Premium and luxury fashion house palettes' },
+  EPL:        { label: 'EPL',               description: 'English Premier League club colors' },
+  NBA:        { label: 'NBA',               description: 'NBA team colors' },
+  Comics:     { label: 'Comics',             description: 'Comic book and graphic novel-inspired colorways' },
+  TMNT:       { label: 'TMNT',              description: 'Teenage Mutant Ninja Turtles character palettes' },
+  MechKeeb:   { label: 'Mechanical Keyboards', description: 'Popular mechanical keyboard keycap colorway designs' },
+  IDE:        { label: 'IDE Themes',         description: 'Code editor and IDE theme-inspired palettes' },
 };
 
 const colorwayCount = COLORWAYS.length;
@@ -14,6 +32,7 @@ const groupCounts = COLORWAYS.reduce((acc, c) => {
   acc[c.group] = (acc[c.group] || 0) + 1;
   return acc;
 }, {});
+const groupOrder = [...new Set(COLORWAYS.map(c => c.group))];
 
 /**
  * Builds the docs page with Help, Troubleshooting, Changelog, and About sections.
@@ -70,10 +89,11 @@ export function buildDocsPage({ onClose } = {}) {
 
   // Section definitions
   const sections = [
-    { id: 'help',            label: 'Help',            icon: ICONS.help },
-    { id: 'troubleshooting', label: 'Troubleshooting', icon: ICONS.troubleshooting },
-    { id: 'changelog',       label: 'Changelog',       icon: ICONS.changelog },
-    { id: 'about',           label: 'About',           icon: ICONS.about },
+    { id: 'help',            label: 'Help',               icon: ICONS.help },
+    { id: 'troubleshooting', label: 'Troubleshooting',    icon: ICONS.troubleshooting },
+    { id: 'colorways',       label: 'Colorway Statistics', icon: ICONS.colorways },
+    { id: 'changelog',       label: 'Changelog',           icon: ICONS.changelog },
+    { id: 'about',           label: 'About',               icon: ICONS.about },
   ];
 
   // TOC
@@ -109,16 +129,7 @@ export function buildDocsPage({ onClose } = {}) {
     buildSubsection('Uploading an Image', `
       Drag and drop a PNG onto the canvas, or click to browse. Files up to 100 MB and 50 megapixels are supported. Larger files may take a moment to process. Your image is never sent to a server.
     `),
-    buildSubsection('Colorways', `
-      The Colorways tab has ${colorwayCount} presets organized into groups:
-      • Running (${groupCounts['Running'] || 0}) – shoe brand palettes (Adidas, Asics, Brooks, Hoka, New Balance, Nike, ON, Puma, Salomon, Saucony)
-      • Mono (${groupCounts['Mono'] || 0}) – single-color tints applied across all layers
-      • Mechanical Keyboard (${groupCounts['Mechanical Keyboard'] || 0}) – popular keycap colorway designs
-      • EPL (${groupCounts['EPL'] || 0}) – English Premier League club colors
-      • NBA (${groupCounts['NBA'] || 0}) – NBA team colors
-
-      Use the prev/next arrows to browse, the group jump button to skip between categories, or hit Shuffle for a random pick.
-    `),
+    buildSubsection('Colorways', buildColorwaysHelpBlurb()),
     buildSubsection('Manual Adjustments', `
       The Manual tab (or sidebar on desktop) gives you HSL sliders for each layer:
       • Map – the route line and map background
@@ -159,13 +170,26 @@ export function buildDocsPage({ onClose } = {}) {
     `),
   ]));
 
+  // Colorway Statistics Section
+  content.appendChild(buildColorwaysStatsSection());
+
   // Changelog Section
   content.appendChild(buildSection('Changelog', 'changelog', ICONS.changelog, [
-    buildSubsection('v1.0.0', `
+    buildSubsection(`v${APP_VERSION}`, `
+      • CalVer versioning — dates instead of arbitrary numbers
+      • Colorway search — Cmd/Ctrl+K to find palettes fast
+      • Colorway favorites — heart your go-to palettes
+      • Drop shadow effect — polish your exports
+      • Group selection modal — curate your sidebar
+      • New colorways — Kopi (coffee) & Comics/TMNT themes
+      • Pink primary palette — fresh coat of paint
+      • Mobile tab reorder — Colorways now default on small screens
+    `),
+    buildSubsection('v2026.04.0', `
       Initial release of StravaChroma.
       • Automatic layer detection (map, data, labels)
       • Color adjustment with HSL sliders
-      • ${colorwayCount} preset colorways across Running, Mono, Mechanical Keyboard, EPL, and NBA groups
+      • ${colorwayCount} preset colorways across ${groupOrder.length} groups
       • Custom background support
       • Mobile and desktop layouts
       • Session persistence via IndexedDB
@@ -186,6 +210,15 @@ export function buildDocsPage({ onClose } = {}) {
     buildSubsection('Open Source', buildOpenSourceLinks()),
     buildSubsection('Maker', buildDeveloperCard()),
   ]));
+
+  // Docs footer with version
+  const docsFooter = document.createElement('footer');
+  docsFooter.className = 'max-w-2xl mx-auto px-6 pb-12 text-center';
+  const versionLine = document.createElement('p');
+  versionLine.className = 'text-xs text-text-muted';
+  versionLine.textContent = `v${APP_VERSION}`;
+  docsFooter.appendChild(versionLine);
+  content.appendChild(docsFooter);
 
   container.appendChild(content);
 
@@ -326,6 +359,103 @@ function buildOpenSourceLinks() {
   container.appendChild(p);
   container.appendChild(links);
   return container;
+}
+
+function buildColorwaysHelpBlurb() {
+  const container = document.createElement('div');
+  container.className = 'text-sm text-text-secondary leading-relaxed';
+
+  const intro = document.createElement('p');
+  intro.className = 'mb-2';
+  intro.textContent = `The Colorways tab has ${colorwayCount} presets organized into ${groupOrder.length} groups:`;
+  container.appendChild(intro);
+
+  const list = document.createElement('ul');
+  list.className = 'space-y-0.5 mb-2 pl-1';
+  groupOrder.forEach(g => {
+    const meta = GROUP_META[g] || { label: g, description: '' };
+    const li = document.createElement('li');
+    li.className = 'before:content-["•"] before:mr-2 before:text-text-muted';
+    li.textContent = `${meta.label} (${groupCounts[g] || 0})${meta.description ? ' – ' + meta.description : ''}`;
+    list.appendChild(li);
+  });
+  container.appendChild(list);
+
+  const tip = document.createElement('p');
+  tip.textContent = 'Use the prev/next arrows to browse, the group jump button to skip between categories, or hit Shuffle for a random pick.';
+  container.appendChild(tip);
+  return container;
+}
+
+function buildColorwaysStatsSection() {
+  const section = document.createElement('section');
+  section.className = 'mb-12';
+  section.id = 'colorways';
+
+  const heading = document.createElement('h2');
+  heading.className = 'flex items-center gap-2 text-xl font-bold mb-6 pb-2 border-b border-border text-text-primary';
+  heading.innerHTML = `<span class="text-text-muted">${ICONS.colorways}</span>Colorway Statistics`;
+  section.appendChild(heading);
+
+  // Summary card
+  const summary = document.createElement('div');
+  summary.className = 'flex items-center gap-4 mb-6 p-4 rounded-lg bg-surface border border-border';
+  const totalNum = document.createElement('span');
+  totalNum.className = 'text-4xl font-bold text-gradient';
+  totalNum.textContent = colorwayCount;
+  const totalLabel = document.createElement('div');
+  totalLabel.className = 'text-sm text-text-secondary leading-tight';
+  totalLabel.innerHTML = `<span class="block text-text-primary font-semibold">Total Colorways</span>across ${groupOrder.length} groups`;
+  summary.appendChild(totalNum);
+  summary.appendChild(totalLabel);
+  section.appendChild(summary);
+
+  // Group breakdown table
+  const maxCount = Math.max(...groupOrder.map(g => groupCounts[g] || 0));
+  const table = document.createElement('div');
+  table.className = 'space-y-2';
+
+  groupOrder.forEach(g => {
+    const count = groupCounts[g] || 0;
+    const pct = Math.round((count / maxCount) * 100);
+    const meta = GROUP_META[g] || { label: g, description: '' };
+
+    const row = document.createElement('div');
+    row.className = 'mb-3';
+
+    const header = document.createElement('div');
+    header.className = 'flex items-center justify-between mb-1';
+
+    const name = document.createElement('span');
+    name.className = 'text-sm font-medium text-text-primary';
+    name.textContent = meta.label;
+
+    const countBadge = document.createElement('span');
+    countBadge.className = 'text-xs text-text-muted tabular-nums';
+    countBadge.textContent = count;
+
+    header.appendChild(name);
+    header.appendChild(countBadge);
+
+    const barTrack = document.createElement('div');
+    barTrack.className = 'h-1.5 bg-surface rounded-full overflow-hidden border border-border';
+    const barFill = document.createElement('div');
+    barFill.className = 'h-full bg-primary rounded-full transition-all';
+    barFill.style.width = `${pct}%`;
+    barTrack.appendChild(barFill);
+
+    const desc = document.createElement('p');
+    desc.className = 'text-xs text-text-muted mt-1';
+    desc.textContent = meta.description || '';
+
+    row.appendChild(header);
+    row.appendChild(barTrack);
+    if (meta.description) row.appendChild(desc);
+    table.appendChild(row);
+  });
+
+  section.appendChild(table);
+  return section;
 }
 
 function buildShortcutsTable() {

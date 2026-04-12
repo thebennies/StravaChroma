@@ -18,7 +18,7 @@ Personalize your run. Turn boring Strava share images into vibrant artworks — 
 
 - **Pixel classification** — automatically separates map, data, and label pixels using connected-component analysis and Otsu thresholding
 - **Independent layer controls** — tune hue and saturation for the map, data, and label layers separately with HSL sliders
-- **60+ colorways** — curated palettes grouped by running brands, sports teams, mechanical keyboards, IDE themes, luxury brands, and more; plus 12 single-layer presets
+- **Hundreds colorways** — curated palettes grouped by running brands, sports teams, mechanical keyboards, IDE themes, luxury brands, and more; plus 12 single-layer presets
 - **Live preview** — downscaled real-time preview while adjusting; full-resolution on export
 - **Off-thread processing** — classification and rendering run in a Web Worker to keep the UI responsive
 - **Drag-and-drop** — drop an image anywhere on the page to load it
@@ -72,6 +72,20 @@ pnpm preview   # serve the production build locally
    - `label` — near-white, low-saturation text and label pixels
 3. **Render** — the worker applies HSL shifts to each layer based on the current slider values and returns pixel data
 4. **Export** — re-renders at full resolution and triggers a PNG download
+
+## Versioning
+
+This project uses **CalVer** — `YYYY.MM.PATCH`.
+
+- `YYYY` — 4-digit year
+- `MM` — 2-digit month (01-12)
+- `PATCH` — starts at `0` each month; increments only when multiple releases ship in the same month
+
+The version is set in `package.json` and injected at build time by Vite, so it is frozen per build (no `new Date()` at runtime). To bump the version before a release:
+
+```bash
+pnpm run version:bump
+```
 
 ## Contributing
 

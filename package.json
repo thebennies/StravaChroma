@@ -1,6 +1,6 @@
 {
   "name": "strava-chroma",
-  "version": "1.0.0",
+  "version": "2026.04.1",
   "description": "Browser-based tool to recolor Strava activity map screenshots — client-side, no uploads",
   "author": "thebennies",
   "license": "MIT",
@@ -34,7 +34,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "version:bump": "node scripts/bump-version.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

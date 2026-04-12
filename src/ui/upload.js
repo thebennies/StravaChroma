@@ -2,6 +2,7 @@ import { toast } from './toast.js';
 import { checkMemoryConstraints } from '../error-boundary.js';
 import { createIcons, Users, ScrollText, BookOpen, ImageUp } from 'lucide';
 import { openModal } from './modal.js';
+import { APP_VERSION } from '../version.js';
 
 /**
  * Builds the empty-state drop zone inside the canvas pane.
@@ -83,19 +84,13 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   line2.className = 'text-sm text-text-secondary';
   line2.textContent = 'or click to browse your PNG file';
 
-  const privacyNote = document.createElement('p');
-  privacyNote.className = 'text-xs text-text-muted text-center mt-3';
-  privacyNote.textContent = '100% Private. Images are processed locally in your browser.';
-
   inner.appendChild(uploadIcon);
   inner.appendChild(line1);
   inner.appendChild(line2);
-  inner.appendChild(privacyNote);
 
   // Set initial visibility for simple mode
   line1.style.display = isSimpleMode ? 'none' : '';
   line2.style.display = isSimpleMode ? 'none' : '';
-  privacyNote.style.display = isSimpleMode ? 'none' : '';
   dropZone.appendChild(title);
 
   // Implementation Sample section
@@ -144,8 +139,6 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   sampleSection.appendChild(sampleGrid);
   dropZone.appendChild(sampleSection);
 
-  dropZone.appendChild(inner);
-
   // Features — no card bg, just icon + title + desc
   function gradIcon(id, svgPaths) {
     return [
@@ -182,6 +175,14 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
       desc: 'No-loss quality for large screen sharing.',
     },
     {
+      icon: gradIcon('fg-shield', [
+        `<path stroke="url(#fg-shield)" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>`,
+        `<path stroke="url(#fg-shield)" d="M9 12l2 2 4-4"/>`,
+      ]),
+      title: '100% Private',
+      desc: 'Images stay in your browser. Nothing is uploaded.',
+    },
+    {
       icon: gradIcon('fg-ban', [
         `<circle stroke="url(#fg-ban)" cx="12" cy="12" r="10"/>`,
         `<line stroke="url(#fg-ban)" x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>`,
@@ -192,7 +193,7 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   ];
 
   const featureGrid = document.createElement('div');
-  featureGrid.className = 'w-full max-w-lg grid grid-cols-3 gap-2 sm:gap-6 mt-6';
+  featureGrid.className = 'w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-6 mt-6 mb-2';
 
   featureItems.forEach(({ icon, title, desc }) => {
     const col = document.createElement('div');
@@ -217,11 +218,7 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   });
 
   dropZone.appendChild(featureGrid);
-
-  // spacer between features and OR
-  const featureOrSpacer = document.createElement('div');
-  featureOrSpacer.className = 'h-4';
-  dropZone.appendChild(featureOrSpacer);
+  dropZone.appendChild(inner);
 
   // OR divider
   const orDivider = document.createElement('div');
@@ -265,7 +262,6 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
 
   // Set initial visibility for simple mode
   featureGrid.style.display = isSimpleMode ? 'none' : '';
-  featureOrSpacer.style.display = isSimpleMode ? 'none' : '';
   orDivider.style.display = isSimpleMode ? 'none' : '';
 
   canvasPane.appendChild(dropZone);
@@ -324,9 +320,14 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   copyright.className = 'text-xs text-text-muted';
   copyright.textContent = 'Copyright adalah Hak Cipta';
 
+  const versionBadge = document.createElement('p');
+  versionBadge.className = 'text-xs text-text-muted';
+  versionBadge.textContent = `v${APP_VERSION}`;
+
   footer.appendChild(avatarLink);
   footer.appendChild(footerLinks);
   footer.appendChild(copyright);
+  footer.appendChild(versionBadge);
   dropZone.appendChild(footer);
 
   // Hidden file input — remove any orphan from a previous buildUploadPrompt call
@@ -355,9 +356,7 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
     sampleSection.style.display = isSimpleMode ? 'none' : '';
     line1.style.display = isSimpleMode ? 'none' : '';
     line2.style.display = isSimpleMode ? 'none' : '';
-    privacyNote.style.display = isSimpleMode ? 'none' : '';
     featureGrid.style.display = isSimpleMode ? 'none' : '';
-    featureOrSpacer.style.display = isSimpleMode ? 'none' : '';
     orDivider.style.display = isSimpleMode ? 'none' : '';
     updateDemoBtnStyle();
     avatarImg.style.filter = isSimpleMode ? 'grayscale(100%)' : '';

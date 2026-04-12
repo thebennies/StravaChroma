@@ -4,7 +4,7 @@ import { PRESETS, COLORWAYS, LARGE_IMAGE_MEGAPIXELS, DEFAULT_MAP_PRESET, DEFAULT
 import { buildLayout } from './ui/layout.js';
 import { buildUploadPrompt, processFile, setupDragHighlight } from './ui/upload.js';
 import { buildDocsPage } from './ui/docs.js';
-import { buildCanvas, drawImageData, fitToCanvas, showCheckerboard, setCanvasBackground, setClassifyOverlay, setRenderSpinner } from './ui/canvas.js';
+import { buildCanvas, drawImageData, fitToCanvas, showCheckerboard, setCanvasBackground, setClassifyOverlay, setRenderSpinner, setDropShadow } from './ui/canvas.js';
 import { buildControls, buildActions } from './ui/controls.js';
 import { downloadExport } from './export.js';
 import { toast } from './ui/toast.js';
@@ -219,9 +219,10 @@ let setExporting           = () => {};
 let setExportEnabled       = () => {};
 let setActiveColorway      = () => {};
 
-let prevHasImage    = false;
-let prevCheckerShow = false;
-let prevCheckerDark = false;
+let prevHasImage         = false;
+let prevCheckerShow      = false;
+let prevCheckerDark      = false;
+let prevDropShadowEnabled = false;
 
 // ── State subscription → DOM updates ─────────────────────────────────────────
 
@@ -252,6 +253,12 @@ subscribe((state) => {
 
   setExporting(state.isExporting);
   setActiveColorway(state.selectedColorway);
+
+  // Handle drop shadow effect
+  if (state.dropShadowEnabled !== prevDropShadowEnabled) {
+    prevDropShadowEnabled = state.dropShadowEnabled;
+    setDropShadow(state.dropShadowEnabled);
+  }
 
   updateMapControls({
     hue: state.mapHue,
@@ -354,6 +361,10 @@ function handleBackgroundChange(type, imageUrl) {
   setCanvasBackground(type, imageUrl);
 }
 
+function handleDropShadowChange(enabled) {
+  setState({ dropShadowEnabled: enabled });
+}
+
 // ── Render request ────────────────────────────────────────────────────────────
 
 function buildSliders() {
@@ -452,7 +463,7 @@ async function handleExport() {
 
   try {
     trackExport(appState, COLORWAYS);
-    await downloadExport(result.pixelData, result.width, result.height);
+    await downloadExport(result.pixelData, result.width, result.height, appState.dropShadowEnabled);
   } catch (err) {
     console.error('Download failed:', err);
     toast.error('Failed to save image. Please try again.');
@@ -562,18 +573,22 @@ function setupEditor() {
   layout = buildLayout(isMobile, { onStartOver: () => navigate('/'), onDocs: () => navigate('/docs') });
   buildCanvas(layout.canvasPane);
   setCanvasBackground(appState.selectedBackground, appState.customImage);
+  setDropShadow(appState.dropShadowEnabled);
 
   prevHasImage = false;
   prevCheckerShow = false;
   prevCheckerDark = false;
+  prevDropShadowEnabled = false;
 
   const controlsResult = buildControls(
     layout.controlsContainer,
     { isMobile, onSliderChange: handleSliderChange, onPresetChange: handlePresetChange,
       onRandom: handleRandom, onReset: handleReset, onSwap: handleSwap, onExport: handleExport, onColorway: handleColorway,
       onBackgroundChange: handleBackgroundChange,
+      onDropShadowChange: handleDropShadowChange,
       initialBackground: appState.selectedBackground,
       initialCustomImage: appState.customImage,
+      initialDropShadow: appState.dropShadowEnabled,
       signal }
   );
   ({ updateMapControls, updateDataControls, updateLabelControls,
