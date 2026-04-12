@@ -541,7 +541,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   const logoCard = document.createElement('button');
   logoCard.setAttribute('aria-label', 'Toggle StravaChroma logo on export');
   logoCard.setAttribute('aria-pressed', localShowLogo ? 'true' : 'false');
-  logoCard.innerHTML = `<span>Show Logo</span>`;
+  logoCard.innerHTML = `<span>Export Logo</span>`;
   logoCard.addEventListener('click', () => {
     localShowLogo = !localShowLogo;
     updateLogoCard();
@@ -551,7 +551,7 @@ function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, init
   function updateLogoCard() {
     logoCard.className = bgCardClass(localShowLogo);
     logoCard.setAttribute('aria-pressed', localShowLogo ? 'true' : 'false');
-    logoCard.innerHTML = `${SVG_LOGO}<span>Show Logo</span>`;
+    logoCard.innerHTML = `${SVG_LOGO}<span>Export Logo</span>`;
   }
 
   effectsGrid.appendChild(logoCard);
