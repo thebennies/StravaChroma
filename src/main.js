@@ -921,9 +921,6 @@ function hasUnsavedChanges() {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
 (async () => {
-  // Clear any stale IndexedDB session on startup to prevent storage bloat
-  await clearImageSession();
-
   // Restore path saved by 404.html (GitHub Pages SPA routing).
   const redirect = sessionStorage.getItem('spa-redirect');
   if (redirect) {
