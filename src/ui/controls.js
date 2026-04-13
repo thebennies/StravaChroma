@@ -13,7 +13,7 @@ export { buildActions } from './export-controls.js';
  * On mobile: renders a tab bar (TOOLS | MAP | DATA | LABEL) with Save button in the tab bar.
  * On desktop: renders all sections stacked (unchanged).
  */
-export function buildControls(container, { isMobile, onSliderChange, onPresetChange, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, onDropShadowChange, initialBackground = 'auto', initialCustomImage = null, initialDropShadow = false, signal }) {
+export function buildControls(container, { isMobile, onSliderChange, onPresetChange, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, onDropShadowChange, onLogoChange, initialBackground = 'auto', initialCustomImage = null, initialDropShadow = false, onGradientChange, initialGradient = false, initialLogo = false, signal }) {
   container.innerHTML = '';
 
   const mapSection = buildLayerSection('Map / Route', 'map', {
@@ -44,12 +44,12 @@ export function buildControls(container, { isMobile, onSliderChange, onPresetCha
   });
 
   if (isMobile) {
-    return buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, signal });
+    return buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo, signal });
   }
 
   // ── Desktop: all sections stacked ──────────────────────────────────────────
 
-  const randomWrapper = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow });
+  const randomWrapper = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo });
   randomWrapper.classList.add('border-b', 'border-border');
 
   const desktopColorwaysSection = document.createElement('div');

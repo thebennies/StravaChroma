@@ -4,7 +4,7 @@ import { saveBtnClass, tabBtnInactiveClass, tabBtnActiveClass } from './controls
 import { buildActionsPanel } from './actions-panel.js';
 import { buildColorwaysPanel } from './colorway-ui.js';
 
-export function buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, signal }) {
+export function buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo, signal }) {
   // Make container a flex column — panels will live in an absolutely-positioned area
   container.style.display = 'flex';
   container.style.flexDirection = 'column';
@@ -39,7 +39,7 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
   panelArea.style.overflow = 'hidden';
 
   // Build panels
-  const actionsPanel = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow });
+  const actionsPanel = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo });
   const { el: colorwaysPanel, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { mobile: true, onSwap, signal });
 
   // Manual panel — stacks Label, Data, Map sections vertically with headings intact
