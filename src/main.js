@@ -143,10 +143,39 @@ function handleWorkerCrash() {
   }
 }
 
+// ── Worker message validation ─────────────────────────────────────────────────
+
+function isValidClassifiedMsg(msg) {
+  return msg && 
+    typeof msg.requestId === 'number' &&
+    msg.mask instanceof Uint8Array &&
+    typeof msg.mapCount === 'number' &&
+    typeof msg.textCount === 'number';
+}
+
+function isValidRenderedMsg(msg) {
+  return msg && 
+    typeof msg.requestId === 'number' &&
+    msg.pixelData instanceof Uint8ClampedArray &&
+    typeof msg.width === 'number' &&
+    typeof msg.height === 'number';
+}
+
+function isValidErrorMsg(msg) {
+  return msg && 
+    typeof msg.message === 'string';
+}
+
 function handleWorkerMessage(e) {
   const msg = e.data;
 
   if (msg.type === 'classified') {
+    if (!isValidClassifiedMsg(msg)) {
+      console.error('Invalid classified message from worker:', msg);
+      toast.error('Processing error: invalid response');
+      setState({ isClassifying: false });
+      return;
+    }
     if (msg.requestId !== latestRequestId) return;
 
     pendingClassification = null;
@@ -163,6 +192,12 @@ function handleWorkerMessage(e) {
   }
 
   if (msg.type === 'rendered') {
+    if (!isValidRenderedMsg(msg)) {
+      console.error('Invalid rendered message from worker:', msg);
+      toast.error('Rendering error: invalid response');
+      setState({ isRendering: false });
+      return;
+    }
     if (msg.requestId !== latestRequestId) return;
 
     if (pendingExport) {
@@ -191,14 +226,19 @@ function handleWorkerMessage(e) {
   }
 
   if (msg.type === 'error') {
-    console.error('Worker reported error:', msg.message);
-    toast.error('Processing failed. Try reloading the page.');
+    if (!isValidErrorMsg(msg)) {
+      console.error('Invalid error message from worker:', msg);
+      toast.error('Processing failed. Try reloading the page.');
+    } else {
+      console.error('Worker reported error:', msg.message);
+      toast.error('Processing failed. Try reloading the page.');
+    }
     setState({ isClassifying: false, isRendering: false, isExporting: false });
     pendingClassification = null;
     if (pendingExport) {
       const { reject } = pendingExport;
       pendingExport = null;
-      reject(new Error('Worker error: ' + msg.message));
+      reject(new Error('Worker error: ' + (msg.message || 'Unknown error')));
     }
   }
 }
@@ -816,6 +856,9 @@ function hasUnsavedChanges() {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
 (async () => {
+  // Clear any stale IndexedDB session on startup to prevent storage bloat
+  await clearImageSession();
+
   // Restore path saved by 404.html (GitHub Pages SPA routing).
   const redirect = sessionStorage.getItem('spa-redirect');
   if (redirect) {
