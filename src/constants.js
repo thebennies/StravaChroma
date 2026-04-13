@@ -2670,6 +2670,154 @@ export const COLORWAYS = [
     map:   { hue: 355, sat:  0.96, luminance:  0.53 },
     label: { hue:   0, sat:  0.0, luminance: 1.00 },
   },
+  // ── Asics *Blast — Novablast 5 & Superblast colorways ─────────────────────
+  {
+    name:  "White Piedmont Grey",
+    group: 'Asics *Blast',
+    data:  { hue:   0, sat:    0, luminance:    1 },
+    map:   { hue:   0, sat:    0, luminance: 0.55 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Black Carrier Grey",
+    group: 'Asics *Blast',
+    data:  { hue:   0, sat:    0, luminance: 0.12 },
+    map:   { hue:   0, sat:    0, luminance: 0.47 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Illusion Blue Light Blue",
+    group: 'Asics *Blast',
+    data:  { hue: 210, sat:  0.7, luminance: 0.65 },
+    map:   { hue: 200, sat:    1, luminance: 0.85 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Pure Aqua Seal Grey",
+    group: 'Asics *Blast',
+    data:  { hue: 174, sat:    1, luminance: 0.35 },
+    map:   { hue:   0, sat:    0, luminance: 0.33 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Flash Red Edo Purple",
+    group: 'Asics *Blast',
+    data:  { hue: 355, sat: 0.96, luminance: 0.53 },
+    map:   { hue: 265, sat: 0.53, luminance: 0.37 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Wave Teal Black",
+    group: 'Asics *Blast',
+    data:  { hue: 174, sat:    1, luminance: 0.35 },
+    map:   { hue:   0, sat:    0, luminance: 0.12 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Greyish Purple Coral Reef",
+    group: 'Asics *Blast',
+    data:  { hue: 285, sat:  0.4, luminance:  0.5 },
+    map:   { hue:   0, sat:    1, luminance:  0.7 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Mojave Amethyst",
+    group: 'Asics *Blast',
+    data:  { hue:  15, sat:  0.7, luminance: 0.65 },
+    map:   { hue: 270, sat: 0.75, luminance:  0.6 },
+    label: { hue:  48, sat:    1, luminance:  0.5 },
+  },
+  {
+    name:  "Sky Lemon Spark",
+    group: 'Asics *Blast',
+    data:  { hue: 200, sat:    1, luminance:  0.7 },
+    map:   { hue:  55, sat:    1, luminance: 0.55 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Yamabuki Anzu",
+    group: 'Asics *Blast',
+    data:  { hue:  45, sat:    1, luminance:  0.6 },
+    map:   { hue:   0, sat:    1, luminance: 0.75 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Cold Moss Light Orange",
+    group: 'Asics *Blast',
+    data:  { hue:  90, sat:  0.5, luminance: 0.55 },
+    map:   { hue:  35, sat:    1, luminance: 0.65 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Oatmeal Black",
+    group: 'Asics *Blast',
+    data:  { hue:  45, sat:  0.4, luminance:  0.9 },
+    map:   { hue:   0, sat:    0, luminance: 0.12 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "White Black",
+    group: 'Asics *Blast',
+    data:  { hue:   0, sat:    0, luminance:    1 },
+    map:   { hue:   0, sat:    0, luminance: 0.12 },
+    label: { hue:   0, sat:    0, luminance: 0.47 },
+  },
+  {
+    name:  "Cobalt Burst Light Orange",
+    group: 'Asics *Blast',
+    data:  { hue: 217, sat:    1, luminance: 0.31 },
+    map:   { hue:  35, sat:    1, luminance: 0.65 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Seashell Sun Coral",
+    group: 'Asics *Blast',
+    data:  { hue:  30, sat:  0.3, luminance: 0.95 },
+    map:   { hue:  15, sat:    1, luminance: 0.65 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Bold Magenta Pink Glo",
+    group: 'Asics *Blast',
+    data:  { hue: 330, sat:  0.8, luminance: 0.45 },
+    map:   { hue: 330, sat:    1, luminance:  0.7 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Winter Sea White",
+    group: 'Asics *Blast',
+    data:  { hue: 200, sat:    1, luminance:  0.3 },
+    map:   { hue:   0, sat:    0, luminance:    1 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Lake Grey White Sage",
+    group: 'Asics *Blast',
+    data:  { hue: 210, sat: 0.15, luminance: 0.45 },
+    map:   { hue: 120, sat:  0.3, luminance: 0.75 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Paris Cool Grey Safety Yellow",
+    group: 'Asics *Blast',
+    data:  { hue:   0, sat:    0, luminance: 0.63 },
+    map:   { hue:  55, sat:    1, luminance: 0.55 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Black White",
+    group: 'Asics *Blast',
+    data:  { hue:   0, sat:    0, luminance: 0.12 },
+    map:   { hue:   0, sat:    0, luminance:    1 },
+    label: { hue:   0, sat:    0, luminance: 0.47 },
+  },
+  {
+    name:  "Sunrise Red Black",
+    group: 'Asics *Blast',
+    data:  { hue: 355, sat: 0.96, luminance: 0.53 },
+    map:   { hue:   0, sat:    0, luminance: 0.12 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
   // ── Famous Brand colorways ────────────────────────────────────────────────
   {
     name:  "Apple",
@@ -3516,7 +3664,7 @@ export const COLORWAYS = [
     label: { hue: 210, sat: 0.50, luminance: 0.65 },
   },
 ].sort((a, b) => {
-  const ORDER = ['Mono', 'Running', 'Kopi', 'ADIOS', 'Sneakers', 'Luxury', 'Brand', 'EPL', 'ISL', 'NBA', 'Movies', 'Comics', 'StarWars', 'TMNT', 'Retro', 'Cyberpunk', 'MechKeeb', 'IDE'];
+  const ORDER = ['Mono', 'Running', 'Kopi', 'ADIZERO', 'Asics *Blast', 'Sneakers', 'Luxury', 'Brand', 'EPL', 'ISL', 'NBA', 'Movies', 'Comics', 'StarWars', 'TMNT', 'Retro', 'Cyberpunk', 'MechKeeb', 'IDE'];
   const ai = ORDER.indexOf(a.group);
   const bi = ORDER.indexOf(b.group);
   if (ai !== bi) return ai - bi;
