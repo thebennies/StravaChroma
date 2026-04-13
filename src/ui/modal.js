@@ -2,13 +2,15 @@
  * Modal component for displaying images
  */
 
+import { registerModal, openModal as openManagedModal, closeActiveModal } from './modal-manager.js';
+
 let modal = null;
 let modalImg = null;
 let closeBtn = null;
 let content = null;
 let onCloseHandler = null;
 let triggerElement = null;
-let focusTrapHandler = null;
+let unregisterModal = null;
 
 /**
  * Creates and initializes the modal element
@@ -76,34 +78,14 @@ function createModal() {
     }
   });
 
-  // Close on escape key
-  document.addEventListener('keydown', handleKeydown);
-
   document.body.appendChild(modal);
-}
-
-function handleKeydown(e) {
-  if (!modal || modal.classList.contains('pointer-events-none')) return;
   
-  if (e.key === 'Escape') {
-    closeModal();
-    return;
-  }
-  
-  // Focus trap handling
-  if (e.key === 'Tab') {
-    const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-    
-    if (e.shiftKey && document.activeElement === firstElement) {
-      e.preventDefault();
-      lastElement.focus();
-    } else if (!e.shiftKey && document.activeElement === lastElement) {
-      e.preventDefault();
-      firstElement.focus();
-    }
-  }
+  // Register with modal manager
+  unregisterModal = registerModal('image-preview', {
+    onClose: closeModal,
+    storeTrigger: (el) => { triggerElement = el; },
+    getFocusableElements: () => modal?.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') || [],
+  });
 }
 
 /**
@@ -113,9 +95,6 @@ function handleKeydown(e) {
  */
 export function openModal(src, alt = '', triggerEl = null) {
   createModal();
-
-  // Store trigger element for focus return
-  triggerElement = triggerEl || document.activeElement;
 
   modalImg.src = src;
   modalImg.alt = alt;
@@ -130,8 +109,8 @@ export function openModal(src, alt = '', triggerEl = null) {
   content.classList.remove('scale-95');
   content.classList.add('scale-100');
 
-  // Prevent body scroll
-  document.body.style.overflow = 'hidden';
+  // Register as active modal
+  openManagedModal('image-preview', triggerEl || document.activeElement);
 
   // Move focus to close button
   requestAnimationFrame(() => {
@@ -152,9 +131,6 @@ export function closeModal() {
   content.classList.remove('scale-100');
   content.classList.add('scale-95');
 
-  // Restore body scroll
-  document.body.style.overflow = '';
-
   // Return focus to trigger element
   if (triggerElement && triggerElement.focus) {
     triggerElement.focus();
@@ -165,6 +141,8 @@ export function closeModal() {
     onCloseHandler();
     onCloseHandler = null;
   }
+  
+  closeActiveModal();
 }
 
 /**
@@ -186,5 +164,8 @@ export function destroyModal() {
     modalImg = null;
     closeBtn = null;
   }
-  document.removeEventListener('keydown', handleKeydown);
+  if (unregisterModal) {
+    unregisterModal();
+    unregisterModal = null;
+  }
 }
