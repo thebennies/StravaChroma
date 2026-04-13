@@ -106,6 +106,7 @@ let pendingClassification = null;
 let latestRequestId = 0;
 let pendingExport = null;
 let pendingExportTimeout = null;
+let exportAbortController = null;
 
 function nextRequestId() {
   return ++latestRequestId;
@@ -518,12 +519,39 @@ function requestRender(isExport) {
 
 // ── Export handler ────────────────────────────────────────────────────────────
 
+function handleCancelExport() {
+  if (!appState.isExporting) return;
+  
+  // Abort the current export
+  exportAbortController?.abort();
+  
+  // Clean up pending export
+  if (pendingExport) {
+    pendingExport.reject(new Error('Export cancelled by user'));
+    pendingExport = null;
+  }
+  
+  // Clear timeout
+  if (pendingExportTimeout) {
+    clearTimeout(pendingExportTimeout);
+    pendingExportTimeout = null;
+  }
+  
+  // Reset state
+  setState({ isExporting: false, isRendering: false });
+  toast.info('Export cancelled');
+}
+
 async function handleExport() {
   if (!appState.sourcePixelData || !appState.classificationMask) {
     toast.info('Load an image first.');
     return;
   }
   if (appState.isExporting) return;
+
+  // Create new abort controller for this export
+  exportAbortController = new AbortController();
+  const abortSignal = exportAbortController.signal;
 
   setState({ isExporting: true });
 
@@ -556,6 +584,15 @@ async function handleExport() {
         reject(err);
       }
       
+      // Listen for abort signal
+      abortSignal.addEventListener('abort', () => {
+        if (pendingExportTimeout) {
+          clearTimeout(pendingExportTimeout);
+          pendingExportTimeout = null;
+        }
+        reject(new Error('Export cancelled'));
+      });
+      
       // Timeout fallback in case worker hangs
       pendingExportTimeout = setTimeout(() => {
         pendingExportTimeout = null;
@@ -566,6 +603,10 @@ async function handleExport() {
       }, 60000); // 60 second timeout
     });
   } catch (err) {
+    if (err.message === 'Export cancelled' || err.message === 'Export cancelled by user') {
+      // User cancelled, already handled
+      return;
+    }
     console.error('Export failed:', err);
     toast.error('Export failed. Please try again.');
     setState({ isExporting: false, isRendering: false });
@@ -576,6 +617,7 @@ async function handleExport() {
       clearTimeout(pendingExportTimeout);
       pendingExportTimeout = null;
     }
+    exportAbortController = null;
   }
 
   try {
@@ -717,7 +759,7 @@ function setupEditor() {
      setEnabled: setControlsEnabled, setRandomEnabled, setActiveColorway } = controlsResult);
 
   if (layout.actions) {
-    ({ setExporting, setExportEnabled } = buildActions(layout.actions, { onExport: handleExport, signal }));
+    ({ setExporting, setExportEnabled } = buildActions(layout.actions, { onExport: handleExport, onCancelExport: handleCancelExport, signal }));
   } else {
     ({ setExporting, setExportEnabled } = controlsResult);
   }
