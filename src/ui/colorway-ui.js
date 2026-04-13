@@ -1,5 +1,10 @@
 import {
+  colorwayFingerprint,
+  getSavedFavorites,
+  getSavedGroupSelection,
   getSavedSearchTerm,
+  saveFavorites,
+  saveGroupSelection,
   saveSearchTerm,
   ALL_GROUPS,
   MANDATORY_GROUP,
