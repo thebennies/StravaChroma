@@ -15,8 +15,6 @@ let lastPanY = 0;
 
 // Touch state
 let lastTouchDist = 0;
-let lastTouchMidX = 0;
-let lastTouchMidY = 0;
 let touchPaneRect = null; // cached at pinch-start, avoids forced layout in touchmove
 
 // window-level handlers stored so they can be removed before re-registering on layout rebuild
@@ -253,8 +251,6 @@ function setupMobileInteractions(canvas) {
         touches[0].clientX - touches[1].clientX,
         touches[0].clientY - touches[1].clientY
       );
-      lastTouchMidX = (touches[0].clientX + touches[1].clientX) / 2;
-      lastTouchMidY = (touches[0].clientY + touches[1].clientY) / 2;
       // Cache pane rect once per pinch gesture to avoid forced layout on every touchmove
       touchPaneRect = canvas.parentElement.getBoundingClientRect();
     }
@@ -283,8 +279,6 @@ function setupMobileInteractions(canvas) {
       }
 
       lastTouchDist = dist;
-      lastTouchMidX = midX;
-      lastTouchMidY = midY;
     }
   }, { passive: false });
 }

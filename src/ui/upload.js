@@ -375,14 +375,6 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   return { dropZone, inner, fileInput, demoBtn };
 }
 
-export function hideUploadPrompt(dropZone) {
-  dropZone.style.display = 'none';
-}
-
-export function showUploadPrompt(dropZone) {
-  dropZone.style.display = '';
-}
-
 /**
  * File size and memory limits
  */
@@ -431,7 +423,7 @@ export async function processFile(file, onSuccess) {
   }
 
   // Check memory constraints
-  const memoryCheck = checkMemoryConstraints(fileMB, width, height);
+  const memoryCheck = checkMemoryConstraints(width, height);
   if (!memoryCheck.allowed) {
     toast.error(memoryCheck.error);
     return;
