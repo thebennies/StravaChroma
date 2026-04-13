@@ -2818,6 +2818,133 @@ export const COLORWAYS = [
     map:   { hue:   0, sat:    0, luminance: 0.12 },
     label: { hue:   0, sat:    0, luminance:    1 },
   },
+  // ── Hoka Clifton — Clifton 10 & prior colorways ────────────────────────────
+  {
+    name:  "Yellow Gold Tidal Wave",
+    group: 'Hoka Clifton',
+    data:  { hue:  48, sat:    1, luminance:  0.5 },
+    map:   { hue: 174, sat:    1, luminance: 0.35 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Ash Grey Neon Green",
+    group: 'Hoka Clifton',
+    data:  { hue:   0, sat:    0, luminance: 0.47 },
+    map:   { hue: 105, sat:    1, luminance:  0.5 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Cobalt Blue Ultramarine",
+    group: 'Hoka Clifton',
+    data:  { hue: 217, sat:    1, luminance: 0.34 },
+    map:   { hue: 251, sat:    1, luminance:  0.5 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Lilac Cream Tangerine Glow",
+    group: 'Hoka Clifton',
+    data:  { hue: 265, sat:    1, luminance:  0.9 },
+    map:   { hue:  27, sat:    1, luminance:  0.5 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Midnight Blue Starlight Glow",
+    group: 'Hoka Clifton',
+    data:  { hue: 210, sat:    1, luminance: 0.19 },
+    map:   { hue:  45, sat:  0.6, luminance:  0.9 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Black Silver",
+    group: 'Hoka Clifton',
+    data:  { hue:   0, sat:    0, luminance: 0.12 },
+    map:   { hue:   0, sat:    0, luminance: 0.75 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "White Black",
+    group: 'Hoka Clifton',
+    data:  { hue:   0, sat:    0, luminance:    1 },
+    map:   { hue:   0, sat:    0, luminance: 0.12 },
+    label: { hue:   0, sat:    0, luminance: 0.47 },
+  },
+  {
+    name:  "Sage Neon Flame",
+    group: 'Hoka Clifton',
+    data:  { hue:  90, sat: 0.12, luminance: 0.67 },
+    map:   { hue:  16, sat:    1, luminance:  0.5 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Putty Grout",
+    group: 'Hoka Clifton',
+    data:  { hue:  45, sat: 0.25, luminance: 0.78 },
+    map:   { hue:   0, sat:    0, luminance: 0.66 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Stellar Grey Stardust",
+    group: 'Hoka Clifton',
+    data:  { hue:   0, sat:    0, luminance: 0.47 },
+    map:   { hue:   0, sat:    0, luminance: 0.96 },
+    label: { hue: 217, sat:    1, luminance: 0.34 },
+  },
+  {
+    name:  "White Cielo Blue",
+    group: 'Hoka Clifton',
+    data:  { hue:   0, sat:    0, luminance:    1 },
+    map:   { hue: 195, sat:    1, luminance:  0.5 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Carnation Starlight Glow",
+    group: 'Hoka Clifton',
+    data:  { hue: 330, sat:    1, luminance: 0.65 },
+    map:   { hue:  45, sat:  0.6, luminance:  0.9 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Frost Orange Zest",
+    group: 'Hoka Clifton',
+    data:  { hue: 210, sat:    1, luminance: 0.97 },
+    map:   { hue:  27, sat:    1, luminance:  0.5 },
+    label: { hue:   0, sat:    0, luminance: 0.12 },
+  },
+  {
+    name:  "Black White",
+    group: 'Hoka Clifton',
+    data:  { hue:   0, sat:    0, luminance: 0.12 },
+    map:   { hue:   0, sat:    0, luminance:    1 },
+    label: { hue:   0, sat:    0, luminance: 0.75 },
+  },
+  {
+    name:  "Lilac Black",
+    group: 'Hoka Clifton',
+    data:  { hue: 300, sat:  0.4, luminance:  0.7 },
+    map:   { hue:   0, sat:    0, luminance: 0.12 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Grey Black",
+    group: 'Hoka Clifton',
+    data:  { hue:   0, sat:    0, luminance: 0.47 },
+    map:   { hue:   0, sat:    0, luminance: 0.12 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Cloud White Core Black",
+    group: 'Hoka Clifton',
+    data:  { hue:   0, sat:    0, luminance:    1 },
+    map:   { hue:   0, sat:    0, luminance: 0.12 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
+  {
+    name:  "Black Silver",
+    group: 'Hoka Clifton',
+    data:  { hue:   0, sat:    0, luminance: 0.12 },
+    map:   { hue:   0, sat:    0, luminance: 0.75 },
+    label: { hue:   0, sat:    0, luminance:    1 },
+  },
   // ── Famous Brand colorways ────────────────────────────────────────────────
   {
     name:  "Apple",
@@ -3664,7 +3791,7 @@ export const COLORWAYS = [
     label: { hue: 210, sat: 0.50, luminance: 0.65 },
   },
 ].sort((a, b) => {
-  const ORDER = ['Mono', 'Running', 'Kopi', 'ADIZERO', 'Asics *Blast', 'Sneakers', 'Luxury', 'Brand', 'EPL', 'ISL', 'NBA', 'Movies', 'Comics', 'StarWars', 'TMNT', 'Retro', 'Cyberpunk', 'MechKeeb', 'IDE'];
+  const ORDER = ['Mono', 'Running', 'Kopi', 'ADIZERO', 'Asics *Blast', 'Hoka Clifton', 'Sneakers', 'Luxury', 'Brand', 'EPL', 'ISL', 'NBA', 'Movies', 'Comics', 'StarWars', 'TMNT', 'Retro', 'Cyberpunk', 'MechKeeb', 'IDE'];
   const ai = ORDER.indexOf(a.group);
   const bi = ORDER.indexOf(b.group);
   if (ai !== bi) return ai - bi;
