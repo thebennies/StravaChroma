@@ -160,14 +160,19 @@ export function updateLayerControls(layer, { hue, sat, luminance }) {
 
   if (hueInput) {
     hueInput.value = hue;
-    hueInput.previousElementSibling?.querySelector('span')?.textContent?.(hue);
+    const span = hueInput.previousElementSibling?.querySelector('span');
+    if (span) span.textContent = hue;
   }
   if (satInput) {
-    satInput.value = Math.round(sat * 100);
-    satInput.previousElementSibling?.querySelector('span')?.textContent?.(Math.round(sat * 100));
+    const satVal = Math.round(sat * 100);
+    satInput.value = satVal;
+    const span = satInput.previousElementSibling?.querySelector('span');
+    if (span) span.textContent = satVal;
   }
   if (lumInput) {
-    lumInput.value = Math.round(luminance * 100);
-    lumInput.previousElementSibling?.querySelector('span')?.textContent?.(Math.round(luminance * 100));
+    const lumVal = Math.round(luminance * 100);
+    lumInput.value = lumVal;
+    const span = lumInput.previousElementSibling?.querySelector('span');
+    if (span) span.textContent = lumVal;
   }
 }

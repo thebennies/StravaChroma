@@ -1,5 +1,5 @@
 import { COLORWAYS, DEFAULT_DATA_PRESET, DEFAULT_LABEL_PRESET } from '../constants.js';
-import { buildLayerSection } from './slider-controls.js';
+import { buildLayerSection, updateLayerControls } from './slider-controls.js';
 import { buildColorwaysPanel } from './colorway-ui.js';
 import { buildActions } from './export-controls.js';
 import { ALL_GROUPS, MANDATORY_GROUP } from './controls-utils.js';
@@ -235,24 +235,22 @@ export function buildControls(container, options) {
     showTab('colorways');
 
     return {
-      updateMapControls: ({ hue, sat, luminance }) => {
-        // Handled by slider event listeners
+      updateMapControls:   (vals) => updateLayerControls('map',   vals),
+      updateDataControls:  (vals) => updateLayerControls('data',  vals),
+      updateLabelControls: (vals) => updateLayerControls('label', vals),
+      setEnabled: (enabled) => {
+        container.querySelectorAll('input, button, select').forEach(el => {
+          el.disabled = !enabled;
+        });
       },
-      updateDataControls: ({ hue, sat, luminance }) => {
-        // Handled by slider event listeners
-      },
-      updateLabelControls: ({ hue, sat, luminance }) => {
-        // Handled by slider event listeners
-      },
-      setEnabled: () => {},
       setRandomEnabled: () => {},
       setActiveColorway: () => {},
       setExporting: () => {},
       setExportEnabled: () => {},
     };
   } else {
-    // Desktop: stacked sections
-    container.className = 'space-y-6';
+    // Desktop: stacked sections — add spacing/padding without clobbering layout classes
+    container.classList.add('space-y-6', 'p-4');
     container.appendChild(colorwaysPanel);
     container.appendChild(mapSection);
     container.appendChild(dataSection);
@@ -272,24 +270,18 @@ export function buildControls(container, options) {
     });
 
     return {
-      updateMapControls: ({ hue, sat, luminance }) => {
-        // Update sliders if needed
-      },
-      updateDataControls: ({ hue, sat, luminance }) => {
-        // Update sliders if needed
-      },
-      updateLabelControls: ({ hue, sat, luminance }) => {
-        // Update sliders if needed
-      },
+      updateMapControls:   (vals) => updateLayerControls('map',   vals),
+      updateDataControls:  (vals) => updateLayerControls('data',  vals),
+      updateLabelControls: (vals) => updateLayerControls('label', vals),
       setEnabled: (enabled) => {
-        // Enable/disable all inputs
+        container.querySelectorAll('input, button, select').forEach(el => {
+          el.disabled = !enabled;
+        });
       },
       setRandomEnabled: (enabled) => {
         randomBtn.disabled = !enabled;
       },
-      setActiveColorway: (idx) => {
-        // Update visual selection
-      },
+      setActiveColorway: () => {},
       setExporting,
       setExportEnabled,
     };
