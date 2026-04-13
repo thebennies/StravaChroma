@@ -1,12 +1,8 @@
 import {
-  colorwayFingerprint,
-  getSavedFavorites,
-  saveFavorites,
-  getSavedGroupSelection,
-  saveGroupSelection,
+  getSavedSearchTerm,
+  saveSearchTerm,
   ALL_GROUPS,
   MANDATORY_GROUP,
-  SEARCH_TERM_KEY,
   navBtnClass,
   colorwayItemClass,
   swatchColor,
@@ -697,27 +693,6 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
   searchModalContent.appendChild(searchResultsContainer);
   searchModalOverlay.appendChild(searchModalContent);
   panel.appendChild(searchModalOverlay);
-
-  // Load saved search term
-  function getSavedSearchTerm() {
-    try {
-      return localStorage.getItem(SEARCH_TERM_KEY) || '';
-    } catch {
-      return '';
-    }
-  }
-
-  function saveSearchTerm(term) {
-    try {
-      if (term) {
-        localStorage.setItem(SEARCH_TERM_KEY, term);
-      } else {
-        localStorage.removeItem(SEARCH_TERM_KEY);
-      }
-    } catch {
-      // Ignore localStorage errors
-    }
-  }
 
   // Search functionality
   function performSearch(query) {

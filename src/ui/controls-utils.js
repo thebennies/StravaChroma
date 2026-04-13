@@ -4,6 +4,26 @@ export const GROUP_SELECTION_KEY = 'stravachroma-selected-groups';
 export const SEARCH_TERM_KEY = 'stravachroma-colorway-search-term';
 export const FAVORITES_KEY = 'stravachroma-favorites';
 
+export function getSavedSearchTerm() {
+  try {
+    return localStorage.getItem(SEARCH_TERM_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function saveSearchTerm(term) {
+  try {
+    if (term) {
+      localStorage.setItem(SEARCH_TERM_KEY, term);
+    } else {
+      localStorage.removeItem(SEARCH_TERM_KEY);
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 export function colorwayFingerprint(cw) {
   const { map, data, label } = cw;
   return `${map.hue},${map.sat},${map.luminance}|${data.hue},${data.sat},${data.luminance}|${label.hue},${label.sat},${label.luminance}`;
