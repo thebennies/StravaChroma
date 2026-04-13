@@ -31,6 +31,24 @@ function buildActionGrid(buttons) {
   return grid;
 }
 
+function buildToggleCard(svg, label, ariaLabel, initial, onChange) {
+  let active = initial;
+  const btn = document.createElement('button');
+  btn.setAttribute('aria-label', ariaLabel);
+  function update() {
+    btn.className = bgCardClass(active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    btn.innerHTML = `${svg}<span>${label}</span>`;
+  }
+  btn.addEventListener('click', () => {
+    active = !active;
+    update();
+    onChange(active);
+  });
+  update();
+  return btn;
+}
+
 export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground = 'auto', initialCustomImage = null, onDropShadowChange, initialDropShadow = false, onGradientChange, initialGradient = false, onLogoChange, initialLogo = false } = {}) {
   const panel = document.createElement('div');
   panel.appendChild(buildActionGrid([
@@ -166,10 +184,6 @@ export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChang
 
   // ── Effects sub-section ─────────────────────────────────────────────────────
 
-  let localDropShadow = initialDropShadow;
-  let localGradient   = initialGradient;
-  let localShowLogo   = initialLogo;
-
   const effectsSeparator = document.createElement('div');
   effectsSeparator.className = 'border-t border-border mx-4';
 
@@ -180,59 +194,13 @@ export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChang
   const effectsGrid = document.createElement('div');
   effectsGrid.className = 'grid grid-cols-4 gap-2 px-4 pb-4';
 
-  // Drop shadow toggle
-  const dropShadowCard = document.createElement('button');
-  dropShadowCard.setAttribute('aria-label', 'Toggle drop shadow effect');
-  dropShadowCard.addEventListener('click', () => {
-    localDropShadow = !localDropShadow;
-    updateDropShadowCard();
-    onDropShadowChange?.(localDropShadow);
-  });
-  function updateDropShadowCard() {
-    dropShadowCard.className = bgCardClass(localDropShadow);
-    dropShadowCard.setAttribute('aria-pressed', localDropShadow ? 'true' : 'false');
-    dropShadowCard.innerHTML = `${SVG_SHADOW}<span>Drop Shadow</span>`;
-  }
-  effectsGrid.appendChild(dropShadowCard);
-
-  // Gradient toggle
-  const gradientCard = document.createElement('button');
-  gradientCard.setAttribute('aria-label', 'Toggle tilted gradient effect');
-  gradientCard.addEventListener('click', () => {
-    localGradient = !localGradient;
-    updateGradientCard();
-    onGradientChange?.(localGradient);
-  });
-  function updateGradientCard() {
-    gradientCard.className = bgCardClass(localGradient);
-    gradientCard.setAttribute('aria-pressed', localGradient ? 'true' : 'false');
-    gradientCard.innerHTML = `${SVG_GRADIENT}<span>Gradient</span>`;
-  }
-  effectsGrid.appendChild(gradientCard);
-
-  // Logo toggle
-  const logoCard = document.createElement('button');
-  logoCard.setAttribute('aria-label', 'Toggle StravaChroma logo on export');
-  logoCard.addEventListener('click', () => {
-    localShowLogo = !localShowLogo;
-    updateLogoCard();
-    onLogoChange?.(localShowLogo);
-  });
-  function updateLogoCard() {
-    logoCard.className = bgCardClass(localShowLogo);
-    logoCard.setAttribute('aria-pressed', localShowLogo ? 'true' : 'false');
-    logoCard.innerHTML = `${SVG_LOGO}<span>Export Logo</span>`;
-  }
-  effectsGrid.appendChild(logoCard);
+  effectsGrid.appendChild(buildToggleCard(SVG_SHADOW, 'Drop Shadow', 'Toggle drop shadow effect',   initialDropShadow, v => onDropShadowChange?.(v)));
+  effectsGrid.appendChild(buildToggleCard(SVG_GRADIENT, 'Gradient',  'Toggle tilted gradient effect', initialGradient,   v => onGradientChange?.(v)));
+  effectsGrid.appendChild(buildToggleCard(SVG_LOGO,   'Export Logo', 'Toggle StravaChroma logo on export', initialLogo, v => onLogoChange?.(v)));
 
   panel.appendChild(effectsSeparator);
   panel.appendChild(effectsHeading);
   panel.appendChild(effectsGrid);
-
-  // Set initial state for effects
-  updateDropShadowCard();
-  updateGradientCard();
-  updateLogoCard();
 
   return panel;
 }
