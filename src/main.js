@@ -107,6 +107,7 @@ let latestRequestId = 0;
 let pendingExport = null;
 let pendingExportTimeout = null;
 let exportAbortController = null;
+const EXPORT_CANCELLED = 'Export cancelled';
 
 function nextRequestId() {
   return ++latestRequestId;
@@ -527,7 +528,7 @@ function handleCancelExport() {
   
   // Clean up pending export
   if (pendingExport) {
-    pendingExport.reject(new Error('Export cancelled by user'));
+    pendingExport.reject(new Error(EXPORT_CANCELLED));
     pendingExport = null;
   }
   
@@ -590,7 +591,7 @@ async function handleExport() {
           clearTimeout(pendingExportTimeout);
           pendingExportTimeout = null;
         }
-        reject(new Error('Export cancelled'));
+        reject(new Error(EXPORT_CANCELLED));
       });
       
       // Timeout fallback in case worker hangs
@@ -603,7 +604,7 @@ async function handleExport() {
       }, 60000); // 60 second timeout
     });
   } catch (err) {
-    if (err.message === 'Export cancelled' || err.message === 'Export cancelled by user') {
+    if (err.message === EXPORT_CANCELLED) {
       // User cancelled, already handled
       return;
     }
