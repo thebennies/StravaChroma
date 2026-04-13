@@ -1,8 +1,3 @@
-/**
- * Gradient color calculation for tilted gradient effect
- * Projects pixels onto a 105° axis for lighting simulation
- */
-
 import { hslToRgb } from './utils.js';
 
 // Cosine/sine of 105° gradient angle, computed once.

@@ -1,8 +1,3 @@
-/**
- * Pixel classification module
- * Separates Strava map images into layers: map, data, labels, transparent
- */
-
 import {
   ALPHA_THRESHOLD, TEXT_SATURATION_MAX,
   MASK_TRANSPARENT, MASK_MAP, MASK_DATA, MASK_LABEL,
