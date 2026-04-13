@@ -6,7 +6,9 @@ const SVG_SUN  = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
 const SVG_AUTO = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor" stroke="none"/></svg>`;
 const SVG_IMG  = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
 const SVG_X    = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
-const SVG_SHADOW = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5a6 6 0 0 0-6 6v6h12v-6a6 6 0 0 0-6-6Z"/><path d="M6 17v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1" opacity="0.5"/><path d="M8 20v2" opacity="0.3"/><path d="M12 20v2" opacity="0.3"/><path d="M16 20v2" opacity="0.3"/></svg>`;
+const SVG_SHADOW   = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5a6 6 0 0 0-6 6v6h12v-6a6 6 0 0 0-6-6Z"/><path d="M6 17v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1" opacity="0.5"/><path d="M8 20v2" opacity="0.3"/><path d="M12 20v2" opacity="0.3"/><path d="M16 20v2" opacity="0.3"/></svg>`;
+const SVG_GRADIENT = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="currentColor" stop-opacity="0.4"/><stop offset="50%" stop-color="currentColor" stop-opacity="1"/><stop offset="100%" stop-color="currentColor" stop-opacity="0.6"/></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="2" fill="url(#g)" stroke="currentColor"/></svg>`;
+const SVG_LOGO     = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 8h16"/><path d="M8 4v4"/></svg>`;
 
 function buildActionGrid(buttons) {
   const grid = document.createElement('div');
@@ -29,7 +31,7 @@ function buildActionGrid(buttons) {
   return grid;
 }
 
-export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground = 'auto', initialCustomImage = null, onDropShadowChange, initialDropShadow = false } = {}) {
+export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground = 'auto', initialCustomImage = null, onDropShadowChange, initialDropShadow = false, onGradientChange, initialGradient = false, onLogoChange, initialLogo = false } = {}) {
   const panel = document.createElement('div');
   panel.appendChild(buildActionGrid([
     {
@@ -165,6 +167,8 @@ export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChang
   // ── Effects sub-section ─────────────────────────────────────────────────────
 
   let localDropShadow = initialDropShadow;
+  let localGradient   = initialGradient;
+  let localShowLogo   = initialLogo;
 
   const effectsSeparator = document.createElement('div');
   effectsSeparator.className = 'border-t border-border mx-4';
@@ -181,7 +185,9 @@ export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChang
   dropShadowCard.setAttribute('aria-label', 'Toggle drop shadow effect');
   dropShadowCard.addEventListener('click', () => {
     localDropShadow = !localDropShadow;
-    updateDropShadowCard();
+  updateDropShadowCard();
+  updateGradientCard();
+  updateLogoCard();
     onDropShadowChange?.(localDropShadow);
   });
   function updateDropShadowCard() {
@@ -190,6 +196,36 @@ export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChang
     dropShadowCard.innerHTML = `${SVG_SHADOW}<span>Drop Shadow</span>`;
   }
   effectsGrid.appendChild(dropShadowCard);
+
+  // Gradient toggle
+  const gradientCard = document.createElement('button');
+  gradientCard.setAttribute('aria-label', 'Toggle tilted gradient effect');
+  gradientCard.addEventListener('click', () => {
+    localGradient = !localGradient;
+    updateGradientCard();
+    onGradientChange?.(localGradient);
+  });
+  function updateGradientCard() {
+    gradientCard.className = bgCardClass(localGradient);
+    gradientCard.setAttribute('aria-pressed', localGradient ? 'true' : 'false');
+    gradientCard.innerHTML = `${SVG_GRADIENT}<span>Gradient</span>`;
+  }
+  effectsGrid.appendChild(gradientCard);
+
+  // Logo toggle
+  const logoCard = document.createElement('button');
+  logoCard.setAttribute('aria-label', 'Toggle StravaChroma logo on export');
+  logoCard.addEventListener('click', () => {
+    localShowLogo = !localShowLogo;
+    updateLogoCard();
+    onLogoChange?.(localShowLogo);
+  });
+  function updateLogoCard() {
+    logoCard.className = bgCardClass(localShowLogo);
+    logoCard.setAttribute('aria-pressed', localShowLogo ? 'true' : 'false');
+    logoCard.innerHTML = `${SVG_LOGO}<span>Export Logo</span>`;
+  }
+  effectsGrid.appendChild(logoCard);
 
   panel.appendChild(effectsSeparator);
   panel.appendChild(effectsHeading);
