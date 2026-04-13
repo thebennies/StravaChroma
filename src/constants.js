@@ -1,8 +1,9 @@
-export const ALPHA_THRESHOLD          = 10;    // 0–255
-export const TEXT_SATURATION_MAX      = 0.15;  // 0–1  text is low-saturation
+// Image processing thresholds
+export const ALPHA_THRESHOLD          = 10;    // 0–255: Pixels below this alpha are considered transparent
+export const TEXT_SATURATION_MAX      = 0.15;  // 0–1: Text/labels have low saturation (<15%)
 // Data vs label split is computed via connected-component height + Otsu's method in the worker
-export const PREVIEW_SCALE_FACTOR     = 0.5;   // 50% downscale for preview
-export const LARGE_IMAGE_MEGAPIXELS   = 20;    // show spinner above this
+export const PREVIEW_SCALE_FACTOR     = 0.5;   // 50% downscale for preview to improve performance
+export const LARGE_IMAGE_MEGAPIXELS   = 20;    // Show loading spinner for images >20MP (approx 80MB raw)
 
 // Mask byte values
 export const MASK_TRANSPARENT = 0;

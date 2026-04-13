@@ -126,10 +126,18 @@ function showErrorRecoveryUI(message) {
 
 /**
  * Check if we're in a memory-constrained environment
+ * 
+ * Memory thresholds:
+ * - 500MB warning: Large images may cause performance issues on devices with 4GB RAM
+ *   500MB ≈ 12,000 x 12,000 pixels (144MP) with RGBA * 3 buffers
+ * - 2000MB hard limit: Prevents OOM crashes on most devices
+ *   2000MB ≈ 24,000 x 24,000 pixels (576MP) with RGBA * 3 buffers
+ *   This is ~50% of 4GB RAM, leaving room for OS and browser overhead
  */
 export function checkMemoryConstraints(fileSizeMB, width, height) {
   const pixelCount = width * height;
-  const estimatedMemoryMB = (pixelCount * 4 * 3) / (1024 * 1024); // RGBA * 3 buffers
+  // RGBA = 4 bytes per pixel, 3 buffers (source, mask, output) = 12 bytes per pixel total
+  const estimatedMemoryMB = (pixelCount * 4 * 3) / (1024 * 1024);
   
   // Check hard limit FIRST before any warnings
   if (estimatedMemoryMB > 2000) {
