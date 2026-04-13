@@ -508,7 +508,13 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
     }));
 
     // Group resolved colorways by group, unavailable ones at the end
-    const available = resolved.filter(r => r.colorway !== null);
+    const available = resolved
+      .filter(r => r.colorway !== null)
+      .sort((a, b) => {
+        const groupCmp = a.colorway.group.localeCompare(b.colorway.group);
+        if (groupCmp !== 0) return groupCmp;
+        return a.colorway.name.localeCompare(b.colorway.name);
+      });
     const unavailable = resolved.filter(r => r.colorway === null);
 
     let currentFavGroup = null;
