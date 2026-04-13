@@ -16,7 +16,7 @@ export default defineConfig({
     target: 'es2022',
     sourcemap: true,
   },
-  base: '/StravaChroma/',
+  base: process.env.GITHUB_ACTIONS ? '/StravaChroma/' : '/',
   server: {
     historyApiFallback: true,
   },
