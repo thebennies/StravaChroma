@@ -185,9 +185,7 @@ export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChang
   dropShadowCard.setAttribute('aria-label', 'Toggle drop shadow effect');
   dropShadowCard.addEventListener('click', () => {
     localDropShadow = !localDropShadow;
-  updateDropShadowCard();
-  updateGradientCard();
-  updateLogoCard();
+    updateDropShadowCard();
     onDropShadowChange?.(localDropShadow);
   });
   function updateDropShadowCard() {
@@ -233,6 +231,8 @@ export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChang
 
   // Set initial state for effects
   updateDropShadowCard();
+  updateGradientCard();
+  updateLogoCard();
 
   return panel;
 }
