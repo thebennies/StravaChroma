@@ -73,12 +73,11 @@ export function closeActiveModal() {
   
   activeModalId = null;
   document.body.style.overflow = '';
-  
-  // Remove escape listener if no modals are open
-  if (modals.size === 0) {
-    document.removeEventListener('keydown', handleGlobalKeydown);
-    escapeListenerAdded = false;
-  }
+
+  // Remove the global listener whenever no modal is active.
+  // It will be re-added on the next openModal() call.
+  document.removeEventListener('keydown', handleGlobalKeydown);
+  escapeListenerAdded = false;
 }
 
 /**

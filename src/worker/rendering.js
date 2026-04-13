@@ -9,7 +9,7 @@ import {
 } from '../constants.js';
 
 import { hslToRgb, downscaleNN } from './utils.js';
-import { buildGradient, getGradientColor } from './gradient.js';
+import { buildLayerGradient, getGradientColor } from './gradient.js';
 
 /**
  * Downscale mask using nearest-neighbor to maintain pixel alignment with image
@@ -69,13 +69,13 @@ export function render(pixelData, mask, width, height, sliders, downscale, gradi
   const [dataR, dataG, dataB] = hslToRgb(sliders.dataHue, sliders.dataSat, sliders.dataLuminance);
   const [labelR, labelG, labelB] = hslToRgb(sliders.labelHue, sliders.labelSat, sliders.labelLuminance);
 
-  // Build gradient color ramps if enabled
+  // Build gradient color ramps if enabled (uses HSL to preserve hue/saturation)
   let gradientColors = null;
   if (gradientEnabled) {
     gradientColors = {
-      map:   buildGradient(mapR,  mapG,  mapB),
-      data:  buildGradient(dataR, dataG, dataB),
-      label: buildGradient(labelR, labelG, labelB),
+      map:   buildLayerGradient(sliders.mapHue,   sliders.mapSat,   sliders.mapLuminance),
+      data:  buildLayerGradient(sliders.dataHue,  sliders.dataSat,  sliders.dataLuminance),
+      label: buildLayerGradient(sliders.labelHue, sliders.labelSat, sliders.labelLuminance),
     };
   }
 

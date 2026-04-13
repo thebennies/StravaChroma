@@ -50,7 +50,7 @@ async function clearImageSession() {
     const db = await openDB();
     const tx = db.transaction(IDB_STORE, 'readwrite');
     tx.objectStore(IDB_STORE).delete(IDB_KEY);
-  } catch { /* non-critical */ }
+  } catch (e) { console.warn('IDB clearImageSession:', e); }
 }
 
 async function saveImageSession(pixelData, width, height) {
@@ -63,7 +63,7 @@ async function saveImageSession(pixelData, width, height) {
       height,
       timestamp: Date.now()
     }, IDB_KEY);
-  } catch { /* non-critical */ }
+  } catch (e) { console.warn('IDB saveImageSession:', e); }
 }
 
 async function loadImageSession() {
@@ -93,7 +93,7 @@ async function loadImageSession() {
       };
       req.onerror = () => resolve(null);
     });
-  } catch { return null; }
+  } catch (e) { console.warn('IDB loadImageSession:', e); return null; }
 }
 
 // ── Resilient Worker Setup ────────────────────────────────────────────────────

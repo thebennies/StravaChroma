@@ -3,43 +3,62 @@
  * Projects pixels onto a 105° axis for lighting simulation
  */
 
+import { hslToRgb } from './utils.js';
+
 // Cosine/sine of 105° gradient angle, computed once.
 const GRAD_COS = Math.cos(105 * (Math.PI / 180));
 const GRAD_SIN = Math.sin(105 * (Math.PI / 180));
 
+// Luminance below which gradient is skipped (near-black colors have no room to darken).
+const GRADIENT_BLACK_THRESHOLD = 0.10;
+
 /**
- * Build a 4-stop gradient ramp: darker → selected → selected → darker
- * Returns objects with {start, middle, end} RGB values
- * 
- * @param {number} r - Red component (0-255)
- * @param {number} g - Green component (0-255)
- * @param {number} b - Blue component (0-255)
- * @returns {Object} Gradient definition with start, middle, end RGB
+ * Build gradient stops for one layer from HSL values.
+ * Uses luminance scaling to preserve hue and saturation across all stops.
+ *
+ * Pattern: slightly-darker → selected color → notably-darker (left → right at 0°).
+ *   start  = L × 0.82  (~18% darker than selected)
+ *   middle = L          (selected color)
+ *   end    = L × 0.55  (~45% darker than selected)
+ *
+ * Returns null when the color is near-black (no gradient applied).
+ *
+ * @param {number} hue - Hue (0–360)
+ * @param {number} sat - Saturation (0–1)
+ * @param {number} luminance - Luminance (0–1)
+ * @returns {Object|null} Gradient stops { start, middle, end } each with { r, g, b }
  */
-export function buildGradient(r, g, b) {
-  // Darken by 30% for shadow side, lighten by 10% for highlight side
-  const shadowR   = Math.max(0, (r * 0.7) | 0);
-  const shadowG   = Math.max(0, (g * 0.7) | 0);
-  const shadowB   = Math.max(0, (b * 0.7) | 0);
-  const highlightR = Math.min(255, (r * 1.1) | 0);
-  const highlightG = Math.min(255, (g * 1.1) | 0);
-  const highlightB = Math.min(255, (b * 1.1) | 0);
+export function buildLayerGradient(hue, sat, luminance) {
+  if (luminance < GRADIENT_BLACK_THRESHOLD) return null;
+
+  const startL = luminance * 0.82;
+  const endL   = luminance * 0.55;
+
+  const [startR, startG, startB] = hslToRgb(hue, sat, startL);
+  const [midR,   midG,   midB]   = hslToRgb(hue, sat, luminance);
+  const [endR,   endG,   endB]   = hslToRgb(hue, sat, endL);
 
   return {
-    start:  { r: shadowR,   g: shadowG,   b: shadowB },
-    middle: { r,           g,           b },
-    end:    { r: highlightR, g: highlightG, b: highlightB },
+    start:  { r: startR, g: startG, b: startB },
+    middle: { r: midR,   g: midG,   b: midB   },
+    end:    { r: endR,   g: endG,   b: endB   },
   };
 }
 
 /**
- * Calculate gradient color for a given pixel by projecting onto the 105° axis.
- * Writes result to the provided output array to avoid object allocation.
- * 
- * The gradient goes from darker (start) → selected color (middle) → lighter (end)
- * with a smooth plateau transition using smoothstep interpolation.
- * 
- * @param {Object} grad - Gradient definition with start, middle, end RGB
+ * Sample the gradient for a single pixel.
+ * t is computed by projecting (x, y) onto the 105° gradient axis and
+ * normalising to [0, 1] across the image diagonal in that direction.
+ * A smoothstep curve is applied so transitions feel natural.
+ *
+ * Four-stop mapping with a plateau in the middle:
+ *   s ∈ [0,   0.2]  → start  → middle  (leading ramp)
+ *   s ∈ [0.2, 0.8]  → middle plateau   (selected color)
+ *   s ∈ [0.8, 1]    → middle → end     (trailing ramp)
+ *
+ * Writes result into `out` array to avoid per-pixel object allocation.
+ *
+ * @param {Object} grad - Gradient stops { start, middle, end } with { r, g, b }
  * @param {number} pixelIndex - Linear pixel index in the image
  * @param {number} width - Image width in pixels
  * @param {number} height - Image height in pixels
@@ -51,7 +70,6 @@ export function getGradientColor(grad, pixelIndex, width, height, out) {
 
   // Normalise projection to [0, 1] — works for any angle, including ones
   // where cos or sin is negative (e.g. 105° where cos < 0).
-  // minProj is the projection at the "dark" corner; range spans the full diagonal.
   const minProj = Math.min(0, (width - 1) * GRAD_COS) + Math.min(0, (height - 1) * GRAD_SIN);
   const range   = (width - 1) * Math.abs(GRAD_COS) + (height - 1) * Math.abs(GRAD_SIN);
   const proj    = x * GRAD_COS + y * GRAD_SIN;
@@ -60,8 +78,6 @@ export function getGradientColor(grad, pixelIndex, width, height, out) {
   // Smoothstep for ease-in-out
   const s = t * t * (3 - 2 * t);
 
-  // Four-stop: start → peak → peak → end
-  // peak plateau covers 60% of the range (s: 0.2 → 0.8)
   const RAMP_IN  = 0.2;
   const RAMP_OUT = 0.8;
   const { start, middle, end } = grad;
