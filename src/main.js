@@ -34,6 +34,7 @@ function sanitizeFilename(name) {
 const IDB_NAME  = 'stravachroma';
 const IDB_STORE = 'session';
 const IDB_KEY   = 'source-image';
+const IDB_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -56,7 +57,12 @@ async function saveImageSession(pixelData, width, height) {
   try {
     const db = await openDB();
     const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).put({ buffer: pixelData.buffer.slice(0), width, height }, IDB_KEY);
+    tx.objectStore(IDB_STORE).put({
+      buffer: pixelData.buffer.slice(0),
+      width,
+      height,
+      timestamp: Date.now()
+    }, IDB_KEY);
   } catch { /* non-critical */ }
 }
 
@@ -65,9 +71,25 @@ async function loadImageSession() {
     const db = await openDB();
     return new Promise((resolve) => {
       const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(IDB_KEY);
-      req.onsuccess = () => {
+      req.onsuccess = async () => {
         const d = req.result;
-        resolve(d ? { pixelData: new Uint8ClampedArray(d.buffer), width: d.width, height: d.height } : null);
+        if (!d) {
+          resolve(null);
+          return;
+        }
+        // Check TTL
+        const age = Date.now() - (d.timestamp || 0);
+        if (age > IDB_TTL_MS) {
+          // Session expired, clear it
+          await clearImageSession();
+          resolve(null);
+          return;
+        }
+        resolve({
+          pixelData: new Uint8ClampedArray(d.buffer),
+          width: d.width,
+          height: d.height
+        });
       };
       req.onerror = () => resolve(null);
     });
