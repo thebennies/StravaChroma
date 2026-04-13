@@ -1,32 +1,14 @@
-import { PRESETS, DEFAULT_DATA_PRESET, DEFAULT_LABEL_PRESET, COLORWAYS } from '../constants.js';
+import { COLORWAYS } from '../constants.js';
 
-// LocalStorage keys
 export const GROUP_SELECTION_KEY = 'stravachroma-selected-groups';
 export const SEARCH_TERM_KEY = 'stravachroma-colorway-search-term';
 export const FAVORITES_KEY = 'stravachroma-favorites';
 
-// Extract unique groups and sort with Mono at the end
-const UNIQUE_GROUPS = [...new Set(COLORWAYS.map(cw => cw.group))];
-export const MANDATORY_GROUP = 'Mono';
-export const ALL_GROUPS = [
-  ...UNIQUE_GROUPS.filter(g => g !== MANDATORY_GROUP),
-  MANDATORY_GROUP
-];
-
-/**
- * Generate a unique fingerprint for a colorway based on its HSL values
- * @param {Object} cw - Colorway object
- * @returns {string} Fingerprint string
- */
 export function colorwayFingerprint(cw) {
   const { map, data, label } = cw;
   return `${map.hue},${map.sat},${map.luminance}|${data.hue},${data.sat},${data.luminance}|${label.hue},${label.sat},${label.luminance}`;
 }
 
-/**
- * Get saved favorites from localStorage
- * @returns {Array} Array of favorite indices
- */
 export function getSavedFavorites() {
   try {
     const saved = localStorage.getItem(FAVORITES_KEY);
@@ -41,10 +23,6 @@ export function getSavedFavorites() {
   return [];
 }
 
-/**
- * Save favorites to localStorage
- * @param {Array} favorites - Array of favorite indices
- */
 export function saveFavorites(favorites) {
   try {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
@@ -53,50 +31,24 @@ export function saveFavorites(favorites) {
   }
 }
 
-/**
- * Save search term to localStorage
- * @param {string} term - Search term
- */
-export function saveSearchTerm(term) {
-  try {
-    if (term) {
-      localStorage.setItem(SEARCH_TERM_KEY, term);
-    } else {
-      localStorage.removeItem(SEARCH_TERM_KEY);
-    }
-  } catch {
-    // Ignore localStorage errors
-  }
-}
+// Extract unique groups and sort with Mono at the end
+const UNIQUE_GROUPS = [...new Set(COLORWAYS.map(cw => cw.group))];
+export const MANDATORY_GROUP = 'Mono';
+export const ALL_GROUPS = [
+  ...UNIQUE_GROUPS.filter(g => g !== MANDATORY_GROUP),
+  MANDATORY_GROUP
+];
 
-/**
- * Load search term from localStorage
- * @returns {string|null} Saved search term
- */
-export function loadSearchTerm() {
-  try {
-    return localStorage.getItem(SEARCH_TERM_KEY);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Get saved group selection from localStorage
- * @param {Array} allGroups - All available groups
- * @param {string} mandatoryGroup - Group that must always be included
- * @returns {Array} Selected groups
- */
-export function getSavedGroupSelection(allGroups, mandatoryGroup) {
+export function getSavedGroupSelection() {
   try {
     const saved = localStorage.getItem(GROUP_SELECTION_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       // Guard against non-array JSON
-      if (!Array.isArray(parsed)) return [...allGroups];
-      // Always ensure mandatory group is included
-      if (!parsed.includes(mandatoryGroup)) {
-        parsed.unshift(mandatoryGroup);
+      if (!Array.isArray(parsed)) return [...ALL_GROUPS];
+      // Always ensure Mono is included
+      if (!parsed.includes(MANDATORY_GROUP)) {
+        parsed.unshift(MANDATORY_GROUP);
       }
       return parsed;
     }
@@ -104,13 +56,9 @@ export function getSavedGroupSelection(allGroups, mandatoryGroup) {
     // Ignore localStorage errors
   }
   // Default: all groups selected
-  return [...allGroups];
+  return [...ALL_GROUPS];
 }
 
-/**
- * Save group selection to localStorage
- * @param {Array} selectedGroups - Array of selected group names
- */
 export function saveGroupSelection(selectedGroups) {
   try {
     localStorage.setItem(GROUP_SELECTION_KEY, JSON.stringify(selectedGroups));
@@ -119,28 +67,76 @@ export function saveGroupSelection(selectedGroups) {
   }
 }
 
-/**
- * CSS class for active colorway swatch
- * @param {boolean} active - Whether the swatch is active
- * @returns {string} CSS class string
- */
-export function colorwayItemClass(active) {
+export function bgCardClass(active) {
   return [
-    'w-8 h-8 rounded-md cursor-pointer transition-all duration-150',
-    'border-2 hover:scale-110',
+    'flex flex-col items-center justify-center gap-1.5',
+    'aspect-square w-full rounded-xl border',
+    'text-xs font-medium cursor-pointer transition-colors duration-150',
     active
-      ? 'border-primary shadow-lg shadow-primary/30 scale-110'
-      : 'border-transparent hover:border-border',
+      ? 'bg-surface-variant border-primary text-text-primary'
+      : 'bg-surface-variant border-border text-text-primary hover:bg-border hover:border-primary/50',
   ].join(' ');
 }
 
-/**
- * Calculate swatch background color from HSL
- * @param {number} hue - Hue (0-360)
- * @param {number} sat - Saturation (0-100)
- * @param {number} luminance - Luminance (0-100)
- * @returns {string} CSS hsl() string
- */
+export function tabBtnInactiveClass() {
+  return [
+    'px-2 py-3 text-xs font-medium',
+    'text-text-secondary border-b-2 border-transparent -mb-px',
+    'hover:text-text-primary transition-colors duration-150 cursor-pointer',
+  ].join(' ');
+}
+
+export function tabBtnActiveClass() {
+  return [
+    'px-2 py-3 text-xs font-semibold',
+    'text-text-primary border-b-2 -mb-px',
+    'transition-colors duration-150 cursor-pointer',
+  ].join(' ');
+}
+
+export function saveBtnClass(disabled) {
+  return [
+    'ml-auto mr-3 px-3 py-1.5',
+    disabled
+      ? 'bg-surface-variant text-text-muted cursor-not-allowed'
+      : 'btn-gradient cursor-pointer',
+    'text-xs font-bold rounded-lg',
+    'transition-all duration-200',
+  ].join(' ');
+}
+
+export function exportBtnClass(disabled) {
+  return [
+    'w-full py-3.5 px-6',
+    disabled
+      ? 'bg-surface-variant text-text-muted cursor-not-allowed'
+      : 'btn-gradient cursor-pointer',
+    'text-sm font-bold tracking-wide',
+    'transition-all duration-200',
+  ].join(' ');
+}
+
+export function navBtnClass() {
+  return [
+    'bg-surface-variant border border-border',
+    'text-text-secondary hover:text-text-primary hover:border-primary hover:bg-surface-variant',
+    'w-9 h-9 flex items-center justify-center',
+    'text-lg rounded-lg cursor-pointer transition-colors duration-150',
+    'flex-shrink-0',
+  ].join(' ');
+}
+
+export function colorwayItemClass(active) {
+  return [
+    'flex items-center gap-2 w-full px-3 py-2.5',
+    'rounded-lg border cursor-pointer text-left',
+    'transition-colors duration-150',
+    active
+      ? 'border-primary bg-surface-variant text-text-primary'
+      : 'border-border bg-surface hover:bg-surface-variant hover:border-primary/50 text-text-primary',
+  ].join(' ');
+}
+
 export function swatchColor(hue, sat, luminance) {
-  return `hsl(${hue}, ${sat * 100}%, ${luminance * 100}%)`;
+  return `hsl(${hue}, ${Math.round(sat * 100)}%, ${Math.round(luminance * 100)}%)`;
 }

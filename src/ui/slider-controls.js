@@ -1,178 +1,246 @@
-import { Shuffle, ListRestart, RotateCw, Layers } from 'lucide';
 import { PRESETS } from '../constants.js';
+import { navBtnClass } from './controls-utils.js';
 
-/**
- * Build a layer section with sliders and presets
- * @param {string} title - Section title
- * @param {string} layer - Layer name ('map', 'data', 'label')
- * @param {Object} options - Configuration options
- * @returns {HTMLElement} Section container
- */
-export function buildLayerSection(title, layer, { initialHue, initialSat, initialLuminance, presetIndex, onSliderChange, onPresetChange, signal }) {
+export function buildLayerSection(title, layer, { initialHue, initialSat, initialLuminance, presetIndex, onSliderChange, onPresetChange }) {
   const section = document.createElement('div');
-  section.className = 'space-y-4';
+  section.className = 'px-5 py-4 border-b border-border';
 
-  // Header with title and reset
-  const header = document.createElement('div');
-  header.className = 'flex items-center justify-between';
+  // Section title
+  const heading = document.createElement('p');
+  heading.className = 'text-xs font-semibold tracking-wide uppercase text-text-secondary mb-4';
+  heading.textContent = title;
+  section.appendChild(heading);
 
-  const titleEl = document.createElement('h3');
-  titleEl.className = 'text-sm font-bold text-text-primary';
-  titleEl.textContent = title;
+  // Sliders container
+  const slidersEl = document.createElement('div');
+  slidersEl.id = `${layer}-sliders`;
+  slidersEl.className = 'flex flex-col gap-5 mb-4';
+  section.appendChild(slidersEl);
 
-  const resetBtn = document.createElement('button');
-  resetBtn.className = 'text-xs text-text-muted hover:text-text-primary transition-colors';
-  resetBtn.textContent = 'Reset';
-  resetBtn.addEventListener('click', () => onPresetChange(layer, layer === 'map' ? 0 : layer === 'data' ? PRESETS.findIndex(p => p.name === 'Pure White') : PRESETS.findIndex(p => p.name === 'Pure White')));
+  let curHue = initialHue, curSat = initialSat / 100, curLum = initialLuminance / 100;
 
-  header.appendChild(titleEl);
-  header.appendChild(resetBtn);
-  section.appendChild(header);
+  function refreshTracks() {
+    hueRow.updateTrack(curHue, curSat, curLum);
+    satRow.updateTrack(curHue, curSat, curLum);
+    lumRow.updateTrack(curHue, curSat, curLum);
+  }
 
-  // Sliders
-  const hueRow = buildSliderRow(
-    `${layer}-hue`,
-    'Hue',
-    0, 360, initialHue,
-    'hue', layer,
-    (val) => onSliderChange(layer, 'hue', val)
-  );
+  const hueRow = buildSliderRow(`${layer}-hue`, 'Hue', 0, 360, initialHue, 'hue', layer, (val) => {
+    curHue = val;
+    onSliderChange(layer, 'hue', val);
+  });
 
-  const satRow = buildSliderRow(
-    `${layer}-sat`,
-    'Saturation',
-    0, 100, initialSat,
-    'sat', layer,
-    (val) => onSliderChange(layer, 'sat', val / 100)
-  );
+  const satRow = buildSliderRow(`${layer}-sat`, 'Saturation', 0, 100, initialSat, 'sat', layer, (val) => {
+    curSat = val / 100;
+    onSliderChange(layer, 'sat', val / 100);
+  });
 
-  const lumRow = buildSliderRow(
-    `${layer}-lum`,
-    'Luminance',
-    0, 100, initialLuminance,
-    'luminance', layer,
-    (val) => onSliderChange(layer, 'luminance', val / 100)
-  );
+  const lumRow = buildSliderRow(`${layer}-lum`, 'Luminance', 0, 100, initialLuminance, 'lum', layer, (val) => {
+    curLum = val / 100;
+    onSliderChange(layer, 'luminance', val / 100);
+  });
 
-  section.appendChild(hueRow);
-  section.appendChild(satRow);
-  section.appendChild(lumRow);
+  slidersEl.appendChild(hueRow.el);
+  slidersEl.appendChild(satRow.el);
+  slidersEl.appendChild(lumRow.el);
 
-  // Presets
-  const presetRow = buildPresetRow(layer, presetIndex, onPresetChange, signal);
-  section.appendChild(presetRow);
+  // Initialise gradients
+  refreshTracks();
 
-  return section;
+  // Preset picker row
+  const presetRow = buildPresetRow(layer, presetIndex, (idx) => {
+    onPresetChange(layer, idx);
+  });
+  section.appendChild(presetRow.el);
+
+  function update({ hue, sat, luminance, selectedPreset }) {
+    if (hue       !== undefined) { curHue = hue;       hueRow.setValue(Math.round(hue)); }
+    if (sat       !== undefined) { curSat = sat;       satRow.setValue(Math.round(sat * 100)); }
+    if (luminance !== undefined) { curLum = luminance; lumRow.setValue(Math.round(luminance * 100)); }
+    if (selectedPreset !== undefined) presetRow.setValue(selectedPreset);
+    refreshTracks();
+  }
+
+  return { el: section, update };
 }
 
-/**
- * Build a slider row with label and input
- * @param {string} id - Slider ID
- * @param {string} label - Label text
- * @param {number} min - Minimum value
- * @param {number} max - Maximum value
- * @param {number} initial - Initial value
- * @param {string} type - Slider type ('hue', 'sat', 'luminance')
- * @param {string} layer - Layer name
- * @param {Function} onChange - Change handler
- * @returns {HTMLElement} Slider row container
- */
 export function buildSliderRow(id, label, min, max, initial, type, layer, onChange) {
-  const row = document.createElement('div');
-  row.className = 'space-y-1';
+  const unit = type === 'hue' ? '\u00B0' : '%';
 
-  const header = document.createElement('div');
-  header.className = 'flex items-center justify-between';
+  const row = document.createElement('div');
+  row.className = 'flex flex-col gap-1.5';
+
+  const labelRow = document.createElement('div');
+  labelRow.className = 'flex justify-between items-center';
 
   const labelEl = document.createElement('label');
-  labelEl.className = 'text-xs text-text-secondary';
-  labelEl.textContent = label;
   labelEl.htmlFor = id;
+  labelEl.className = 'text-xs font-medium text-text-secondary';
+  labelEl.textContent = label;
 
-  const valueEl = document.createElement('span');
-  valueEl.className = 'text-xs text-text-muted font-mono';
-  valueEl.textContent = initial;
+  // Editable number input
+  const valueInput = document.createElement('input');
+  valueInput.type = 'number';
+  valueInput.min = min;
+  valueInput.max = max;
+  valueInput.value = initial;
+  valueInput.className = [
+    'w-[3.75rem] text-right text-xs font-semibold text-text-primary',
+    'bg-surface-variant border border-border rounded px-1.5 py-0.5',
+    'focus:outline-none focus:border-primary',
+  ].join(' ');
+  valueInput.setAttribute('aria-label', `${label} value for ${layer}`);
+  // Hide spin buttons via inline style (Tailwind purges arbitrary variants unreliably)
+  valueInput.style.MozAppearance = 'textfield';
+  valueInput.style.setProperty('-webkit-appearance', 'none');
 
-  header.appendChild(labelEl);
-  header.appendChild(valueEl);
-  row.appendChild(header);
+  labelRow.appendChild(labelEl);
+  labelRow.appendChild(valueInput);
+  row.appendChild(labelRow);
 
-  const input = document.createElement('input');
-  input.type = 'range';
-  input.id = id;
-  input.min = min;
-  input.max = max;
-  input.value = initial;
-  input.className = 'w-full h-2 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary';
+  const rangeInput = document.createElement('input');
+  rangeInput.type = 'range';
+  rangeInput.id = id;
+  rangeInput.min = min;
+  rangeInput.max = max;
+  rangeInput.value = initial;
+  rangeInput.className = 'w-full slider-gradient';
+  rangeInput.setAttribute('aria-label', `${label} for ${layer} layer`);
+  rangeInput.setAttribute('aria-valuemin', min);
+  rangeInput.setAttribute('aria-valuemax', max);
+  rangeInput.setAttribute('aria-valuenow', initial);
+  rangeInput.setAttribute('aria-valuetext', `${initial}${unit}`);
 
-  // Update value display and call handler
-  input.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value, 10);
-    valueEl.textContent = val;
-    onChange(type === 'hue' ? val : val / 100);
+  function updateTrack(hue, sat, lum) {
+    let gradient;
+    if (type === 'hue') {
+      const s = Math.round(sat * 100), l = Math.round(lum * 100);
+      const stops = [];
+      for (let h = 0; h <= 360; h += 30) stops.push(`hsl(${h},${s}%,${l}%)`);
+      gradient = `linear-gradient(to right, ${stops.join(',')})`;
+    } else if (type === 'sat') {
+      const l = Math.round(lum * 100);
+      gradient = `linear-gradient(to right, hsl(${hue},0%,${l}%), hsl(${hue},100%,${l}%))`;
+    } else {
+      const s = Math.round(sat * 100);
+      gradient = `linear-gradient(to right, hsl(${hue},${s}%,0%), hsl(${hue},${s}%,50%), hsl(${hue},${s}%,100%))`;
+    }
+    rangeInput.style.setProperty('--track-gradient', gradient);
+  }
+
+  rangeInput.addEventListener('input', () => {
+    const val = Number(rangeInput.value);
+    valueInput.value = val;
+    rangeInput.setAttribute('aria-valuenow', val);
+    rangeInput.setAttribute('aria-valuetext', `${val}${unit}`);
+    onChange(val);
   });
 
-  row.appendChild(input);
+  valueInput.addEventListener('input', () => {
+    let val = Number(valueInput.value);
+    if (!isNaN(val)) {
+      val = Math.max(min, Math.min(max, val));
+      rangeInput.value = val;
+      rangeInput.setAttribute('aria-valuenow', val);
+      rangeInput.setAttribute('aria-valuetext', `${val}${unit}`);
+      onChange(val);
+    }
+  });
 
-  return row;
+  valueInput.addEventListener('blur', () => {
+    let val = Number(valueInput.value);
+    val = Math.max(min, Math.min(max, isNaN(val) ? initial : val));
+    valueInput.value = val;
+    rangeInput.value = val;
+  });
+
+  valueInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') valueInput.blur();
+  });
+
+  row.appendChild(rangeInput);
+
+  function setValue(val) {
+    rangeInput.value = val;
+    valueInput.value = val;
+    rangeInput.setAttribute('aria-valuenow', val);
+    rangeInput.setAttribute('aria-valuetext', `${val}${unit}`);
+  }
+
+  return { el: row, setValue, updateTrack };
 }
 
-/**
- * Build preset selection row
- * @param {string} layer - Layer name
- * @param {number} initialIndex - Initial preset index
- * @param {Function} onChange - Change handler
- * @param {AbortSignal} signal - Abort signal for cleanup
- * @returns {HTMLElement} Preset row container
- */
-export function buildPresetRow(layer, initialIndex, onChange, signal) {
+export function buildPresetRow(layer, initialIndex, onChange) {
   const row = document.createElement('div');
-  row.className = 'flex flex-wrap gap-1 pt-2';
+  row.className = 'flex items-center gap-2';
 
-  PRESETS.forEach((preset, index) => {
-    const btn = document.createElement('button');
-    btn.className = [
-      'px-2 py-1 text-xs rounded-md transition-colors',
-      index === initialIndex
-        ? 'bg-primary text-white'
-        : 'bg-surface-variant text-text-secondary hover:bg-border'
-    ].join(' ');
-    btn.textContent = preset.name;
-    btn.addEventListener('click', () => {
-      onChange(layer, index);
-    }, { signal });
+  const select = document.createElement('select');
+  select.id = `${layer}-preset-select`;
+  select.className = [
+    'flex-1 bg-surface-variant border border-border',
+    'text-xs text-text-primary',
+    'px-3 py-2 rounded-lg cursor-pointer',
+    'focus:outline-none focus:border-primary',
+    'appearance-none',
+  ].join(' ');
+  select.setAttribute('aria-label', `${layer} color preset`);
 
-    row.appendChild(btn);
+  for (let i = 0; i < PRESETS.length; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = PRESETS[i].name;
+    if (i === initialIndex) opt.selected = true;
+    select.appendChild(opt);
+  }
+
+  // Wrapper for select with arrow
+  const selectWrapper = document.createElement('div');
+  selectWrapper.className = 'relative flex-1';
+  selectWrapper.appendChild(select);
+
+  const arrow = document.createElement('span');
+  arrow.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none text-xs';
+  arrow.setAttribute('aria-hidden', 'true');
+  arrow.textContent = '\u25BE';
+  selectWrapper.appendChild(arrow);
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = navBtnClass();
+  prevBtn.textContent = '\u2039';
+  prevBtn.title = 'Previous preset';
+  prevBtn.setAttribute('aria-label', 'Previous color preset');
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = navBtnClass();
+  nextBtn.textContent = '\u203A';
+  nextBtn.title = 'Next preset';
+  nextBtn.setAttribute('aria-label', 'Next color preset');
+
+  select.addEventListener('change', () => {
+    onChange(Number(select.value));
   });
 
-  return row;
-}
+  prevBtn.addEventListener('click', () => {
+    const cur = Number(select.value);
+    const next = (cur - 1 + PRESETS.length) % PRESETS.length;
+    select.value = next;
+    onChange(next);
+  });
 
-/**
- * Update slider controls with new values
- * @param {string} layer - Layer name
- * @param {Object} values - New values { hue, sat, luminance }
- */
-export function updateLayerControls(layer, { hue, sat, luminance }) {
-  const hueInput = document.getElementById(`${layer}-hue`);
-  const satInput = document.getElementById(`${layer}-sat`);
-  const lumInput = document.getElementById(`${layer}-lum`);
+  nextBtn.addEventListener('click', () => {
+    const cur = Number(select.value);
+    const next = (cur + 1) % PRESETS.length;
+    select.value = next;
+    onChange(next);
+  });
 
-  if (hueInput) {
-    hueInput.value = hue;
-    const span = hueInput.previousElementSibling?.querySelector('span');
-    if (span) span.textContent = hue;
+  row.appendChild(prevBtn);
+  row.appendChild(selectWrapper);
+  row.appendChild(nextBtn);
+
+  function setValue(idx) {
+    select.value = idx;
   }
-  if (satInput) {
-    const satVal = Math.round(sat * 100);
-    satInput.value = satVal;
-    const span = satInput.previousElementSibling?.querySelector('span');
-    if (span) span.textContent = satVal;
-  }
-  if (lumInput) {
-    const lumVal = Math.round(luminance * 100);
-    lumInput.value = lumVal;
-    const span = lumInput.previousElementSibling?.querySelector('span');
-    if (span) span.textContent = lumVal;
-  }
+
+  return { el: row, setValue };
 }
