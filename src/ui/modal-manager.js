@@ -138,4 +138,6 @@ export function closeAllModals() {
   });
   activeModalId = null;
   document.body.style.overflow = '';
+  document.removeEventListener('keydown', handleGlobalKeydown);
+  escapeListenerAdded = false;
 }
