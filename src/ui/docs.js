@@ -136,7 +136,7 @@ export function buildDocsPage({ onClose } = {}) {
       Upload a PNG of your Strava activity share image. StravaChroma analyzes it locally in your browser, detects three color layers, and lets you restyle them however you like. Hit the demo button on the home page to try it without your own image.
     `),
     buildSubsection('Uploading an Image', `
-      Drag and drop a PNG onto the canvas, or click to browse. Files up to 100 MB and 50 megapixels are supported. Larger files may take a moment to process. Your image is never sent to a server.
+      Drag and drop a PNG onto the canvas, or click to browse. Files up to 1 MB are supported. Your image is never sent to a server.
     `),
     buildSubsection('Manual Adjustments', `
       The Manual tab (or sidebar on desktop) gives you HSL sliders for each layer:
@@ -154,6 +154,12 @@ export function buildDocsPage({ onClose } = {}) {
       • Light – solid white
       • Image – upload your own background (tap the clear button to remove it)
     `),
+    buildSubsection('Experimental Effects', `
+      The Actions panel (or sidebar on desktop) has three toggleable effects under "Experimental":
+      • Drop Shadow – adds a soft shadow behind the image layers
+      • Gradient – overlays a tilted light-to-dark gradient for a 3D feel
+      • Export Logo – stamps the StravaChroma logo onto the saved image
+    `),
     buildSubsection('Saving Your Image', `
       Tap "Save" (mobile) or "Save Image" (desktop) to download a full-resolution PNG. On supported mobile browsers the system share sheet will open instead, letting you send or save directly from there.
     `),
@@ -168,7 +174,7 @@ export function buildDocsPage({ onClose } = {}) {
       The canvas preview renders at 50% resolution for performance. The exported file is always at full resolution — use Save Image to get the full-quality version.
     `),
     buildSubsection('Export fails or times out', `
-      Very large images (20+ megapixels) can take several seconds to export. If it fails, the app will retry automatically up to twice. If it keeps failing, try refreshing the page — your session is saved and will be restored.
+      Export renders at full resolution in a background worker — this usually completes in under a second. If it fails, the app retries automatically up to twice. If it keeps failing, try refreshing the page — your session is saved and will be restored.
     `),
     buildSubsection('App crashed or the image disappeared', `
       The image processing runs in a background Web Worker. If the worker crashes, the app restarts it automatically. Your source image is saved in IndexedDB, so refreshing the page will restore your session.
@@ -187,11 +193,12 @@ export function buildDocsPage({ onClose } = {}) {
       • CalVer versioning — dates instead of arbitrary numbers
       • Colorway search — Cmd/Ctrl+K to find palettes fast
       • Colorway favorites — heart your go-to palettes
-      • Drop shadow effect — polish your exports
+      • Drop shadow, gradient, and export logo effects
       • Group selection modal — curate your sidebar
       • New colorways — Kopi (coffee) & Comics/TMNT themes
       • Pink primary palette — fresh coat of paint
       • Mobile tab reorder — Colorways now default on small screens
+      • File upload limit tightened to 1 MB
     `),
     buildSubsection('v2026.04.0', `
       Initial release of StravaChroma.

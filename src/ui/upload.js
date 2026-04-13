@@ -387,8 +387,7 @@ export function showUploadPrompt(dropZone) {
  * File size and memory limits
  */
 const MEMORY_LIMITS = {
-  WARNING_MB: 20,
-  HARD_LIMIT_MB: 100,
+  HARD_LIMIT_MB: 1,
   MAX_PIXELS: 50 * 1000000, // 50 megapixels
   WARNING_PIXELS: 20 * 1000000 // 20 megapixels
 };
@@ -406,11 +405,6 @@ export async function processFile(file, onSuccess) {
   if (file.size > MEMORY_LIMITS.HARD_LIMIT_MB * 1024 * 1024) {
     toast.error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Please use an image under ${MEMORY_LIMITS.HARD_LIMIT_MB} MB.`);
     return;
-  }
-
-  const fileMB = file.size / (1024 * 1024);
-  if (fileMB > MEMORY_LIMITS.WARNING_MB) {
-    toast.warning('Large file — processing may take a while...');
   }
 
   let dimensions;
