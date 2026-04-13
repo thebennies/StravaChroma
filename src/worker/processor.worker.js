@@ -108,144 +108,82 @@ function classify(pixelData, width, height) {
     }
   }
 
-  // Filter noise
-  const MIN_COMPONENT_PIXELS = 10;
-  const validRoots = new Set();
-
+  // Determine per-component label: data (tall/wide) vs label (short text)
+  // Uses Otsu's method on height distribution to find optimal threshold
+  const heights = [];
   for (const [root, size] of compSize) {
-    if (size < MIN_COMPONENT_PIXELS) continue;
-    validRoots.add(root);
+    if (size < MIN_COMPONENT_PIXELS) continue; // ignore noise
+    const h = compMaxY.get(root) - compMinY.get(root) + 1;
+    heights.push(h);
   }
 
-  // ── Proximity-based merging ─────────────────────────────────────────────────
-  // Merge nearby text components so punctuation (., :) inherits the height
-  // classification of neighboring characters.
-  const rootList = Array.from(validRoots);
-  rootList.sort((a, b) => compMinX.get(a) - compMinX.get(b));
+  // Otsu threshold to split text into DATA vs LABEL
+  const heightThreshold = heights.length > 0 ? otsuThresholdInt(heights, Math.max(...heights)) : 10;
 
-  const uf2 = makeUnionFind(rootList.length);
-  for (let idx = 0; idx < rootList.length; idx++) uf2.init(idx);
-
-  for (let i = 0; i < rootList.length; i++) {
-    const ri = rootList[i];
-    const hi = compMaxY.get(ri) - compMinY.get(ri) + 1;
-    const maxXi = compMaxX.get(ri);
-    const centerYi = (compMinY.get(ri) + compMaxY.get(ri)) / 2;
-
-    for (let j = i + 1; j < rootList.length; j++) {
-      const rj = rootList[j];
-      const hj = compMaxY.get(rj) - compMinY.get(rj) + 1;
-      const maxH2 = Math.max(hi, hj);
-      const gapThreshold = 0.5 * maxH2;
-
-      // Horizontal gap (sorted by minX, so minX_j >= minX_i)
-      const gapX = Math.max(0, compMinX.get(rj) - maxXi);
-      if (gapX > gapThreshold) break;
-
-      // Vertical compatibility: Y-centers within maxH of each other
-      const centerYj = (compMinY.get(rj) + compMaxY.get(rj)) / 2;
-      if (Math.abs(centerYi - centerYj) > maxH2) continue;
-
-      uf2.union(i, j);
+  // Mark each component
+  const rootToLabel = new Map();
+  for (const [root, size] of compSize) {
+    if (size < MIN_COMPONENT_PIXELS) {
+      rootToLabel.set(root, MASK_TRANSPARENT);
+      continue;
     }
+    const h = compMaxY.get(root) - compMinY.get(root) + 1;
+    rootToLabel.set(root, h > heightThreshold ? MASK_DATA : MASK_LABEL);
   }
 
-  // Compute merged-group bounding boxes
-  const groupMinY = new Map();
-  const groupMaxY = new Map();
-  for (let idx = 0; idx < rootList.length; idx++) {
-    const gRoot = uf2.find(idx);
-    const r = rootList[idx];
-    const prevMin = groupMinY.get(gRoot);
-    if (prevMin === undefined) {
-      groupMinY.set(gRoot, compMinY.get(r));
-      groupMaxY.set(gRoot, compMaxY.get(r));
-    } else {
-      if (compMinY.get(r) < prevMin) groupMinY.set(gRoot, compMinY.get(r));
-      if (compMaxY.get(r) > groupMaxY.get(gRoot)) groupMaxY.set(gRoot, compMaxY.get(r));
+  // Finalize mask: replace MASK_PENDING with actual labels
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x;
+      if (mask[i] === MASK_PENDING) {
+        const root = uf.find(i);
+        mask[i] = rootToLabel.get(root) ?? MASK_TRANSPARENT;
+      }
     }
-  }
-
-  // Map each component root to its merged group height
-  const rootToMergedHeight = new Map();
-  for (let idx = 0; idx < rootList.length; idx++) {
-    const gRoot = uf2.find(idx);
-    rootToMergedHeight.set(rootList[idx], groupMaxY.get(gRoot) - groupMinY.get(gRoot) + 1);
-  }
-
-  // Collect merged heights for Otsu
-  const mergedHeights = [];
-  for (const [gRoot] of groupMinY) {
-    mergedHeights.push(groupMaxY.get(gRoot) - groupMinY.get(gRoot) + 1);
-  }
-
-  // ── Pass 3: split components by height — tall = DATA, short = LABEL ───────
-  let maxH = 0;
-  for (const h of mergedHeights) if (h > maxH) maxH = h;
-
-  const heightThreshold = maxH > 0
-    ? otsuThresholdInt(mergedHeights, maxH)
-    : 0;
-
-  // Build root → DATA/LABEL lookup using merged group heights
-  const compClass = new Map();
-  for (const root of validRoots) {
-    const h = rootToMergedHeight.get(root) || (compMaxY.get(root) - compMinY.get(root) + 1);
-    compClass.set(root, h >= heightThreshold ? MASK_DATA : MASK_LABEL);
-  }
-
-  // Final assignment
-  for (let i = 0; i < numPixels; i++) {
-    if (mask[i] !== 255) continue;
-    const root = uf.find(i);
-    const cls = compClass.get(root);
-    mask[i] = cls !== undefined ? cls : MASK_MAP;
   }
 
   return mask;
 }
 
-// ── Render pass ──────────────────────────────────────────────────────────────
+// ── Rendering ─────────────────────────────────────────────────────────────────
 
-function render(pixelData, mask, width, height, sliders, downscale, gradientEnabled = false) {
-  const { mapHue, mapSat, mapLuminance,
-          dataHue, dataSat, dataLuminance,
-          labelHue, labelSat, labelLuminance } = sliders;
+const MIN_COMPONENT_PIXELS = 10;
 
+function render(pixelData, mask, width, height, sliders, downscale, gradientEnabled) {
+  // Optional: downscale for preview
   let srcData = pixelData;
   let srcMask = mask;
-  let outW = width;
-  let outH = height;
-
-  if (downscale) {
-    const scaled = downscaleNN(pixelData, width, height, PREVIEW_SCALE_FACTOR);
-    srcData = scaled.data;
-    outW = scaled.width;
-    outH = scaled.height;
-
-    // Downscale mask with nearest-neighbour (same formula as downscaleNN)
-    const scaledMask = new Uint8Array(outW * outH);
-    for (let y = 0; y < outH; y++) {
-      const srcY = Math.floor(y / PREVIEW_SCALE_FACTOR);
-      for (let x = 0; x < outW; x++) {
-        const srcX = Math.floor(x / PREVIEW_SCALE_FACTOR);
-        scaledMask[y * outW + x] = mask[srcY * width + srcX];
-      }
-    }
-    srcMask = scaledMask;
+  let outW = width, outH = height;
+  if (downscale && PREVIEW_SCALE_FACTOR < 1) {
+    const ds = downscaleNN(pixelData, width, height, PREVIEW_SCALE_FACTOR);
+    // Downscale mask using nearest neighbor to maintain pixel alignment
+    const dsMask = downscaleMaskNearest(srcMask, width, height, PREVIEW_SCALE_FACTOR);
+    srcData = ds.data;
+    srcMask = dsMask;
+    outW = ds.width;
+    outH = ds.height;
   }
 
   const numPixels = outW * outH;
-  const output = new Uint8ClampedArray(srcData.length);
+  const output = new Uint8ClampedArray(numPixels * 4);
 
-  const [mapR,   mapG,   mapB]   = hslToRgb(mapHue,   mapSat,   mapLuminance);
-  const [dataR,  dataG,  dataB]  = hslToRgb(dataHue,  dataSat,  dataLuminance);
-  const [labelR, labelG, labelB] = hslToRgb(labelHue, labelSat, labelLuminance);
+  // Precompute base RGBs from HSL sliders
+  const [mapR,  mapG,  mapB]  = hslToRgb(sliders.mapHue,  sliders.mapSat,  sliders.mapLuminance);
+  const [dataR, dataG, dataB] = hslToRgb(sliders.dataHue, sliders.dataSat, sliders.dataLuminance);
+  const [labelR, labelG, labelB] = hslToRgb(sliders.labelHue, sliders.labelSat, sliders.labelLuminance);
 
-  // Pre-compute gradient colors if gradient is enabled
-  const gradientColors = gradientEnabled
-    ? computeGradientColors(sliders)
-    : null;
+  // Build gradient color ramps if enabled
+  let gradientColors = null;
+  if (gradientEnabled) {
+    gradientColors = {
+      map:   buildGradient(mapR,  mapG,  mapB),
+      data:  buildGradient(dataR, dataG, dataB),
+      label: buildGradient(labelR, labelG, labelB),
+    };
+  }
+
+  // Reusable array for gradient color results to reduce GC pressure
+  const gradResult = new Uint8Array(3);
 
   for (let i = 0; i < numPixels; i++) {
     const base = i * 4;
@@ -263,22 +201,22 @@ function render(pixelData, mask, width, height, sliders, downscale, gradientEnab
     let nr, ng, nb;
     if (m === MASK_MAP) {
       if (gradientColors && gradientColors.map) {
-        const gc = getGradientColor(gradientColors.map, i, outW, outH);
-        nr = gc.r; ng = gc.g; nb = gc.b;
+        getGradientColor(gradientColors.map, i, outW, outH, gradResult);
+        nr = gradResult[0]; ng = gradResult[1]; nb = gradResult[2];
       } else {
         nr = mapR;   ng = mapG;   nb = mapB;
       }
     } else if (m === MASK_DATA) {
       if (gradientColors && gradientColors.data) {
-        const gc = getGradientColor(gradientColors.data, i, outW, outH);
-        nr = gc.r; ng = gc.g; nb = gc.b;
+        getGradientColor(gradientColors.data, i, outW, outH, gradResult);
+        nr = gradResult[0]; ng = gradResult[1]; nb = gradResult[2];
       } else {
         nr = dataR;  ng = dataG;  nb = dataB;
       }
     } else {
       if (gradientColors && gradientColors.label) {
-        const gc = getGradientColor(gradientColors.label, i, outW, outH);
-        nr = gc.r; ng = gc.g; nb = gc.b;
+        getGradientColor(gradientColors.label, i, outW, outH, gradResult);
+        nr = gradResult[0]; ng = gradResult[1]; nb = gradResult[2];
       } else {
         nr = labelR; ng = labelG; nb = labelB;
       }
@@ -297,67 +235,54 @@ function render(pixelData, mask, width, height, sliders, downscale, gradientEnab
 const GRAD_COS = Math.cos(105 * (Math.PI / 180));
 const GRAD_SIN = Math.sin(105 * (Math.PI / 180));
 
-// Luminance below which gradient is skipped (near-black).
-const GRADIENT_BLACK_THRESHOLD = 0.10;
+/**
+ * Downscale mask using nearest-neighbor to maintain pixel alignment with image
+ */
+function downscaleMaskNearest(srcMask, srcW, srcH, scale) {
+  const dstW = Math.max(1, Math.floor(srcW * scale));
+  const dstH = Math.max(1, Math.floor(srcH * scale));
+  const dst = new Uint8Array(dstW * dstH);
+  for (let y = 0; y < dstH; y++) {
+    const srcY = Math.floor(y / scale);
+    for (let x = 0; x < dstW; x++) {
+      const srcX = Math.floor(x / scale);
+      dst[y * dstW + x] = srcMask[srcY * srcW + srcX];
+    }
+  }
+  return dst;
+}
 
 /**
- * Build the three RGB stops for one layer's gradient.
- * Pattern: slightly-darker → selected color → notably-darker, left → right (0°).
- * Returns null when the color is near-black (no gradient applied).
- *
- * Offsets are relative to luminance so they scale correctly across all
- * brightness levels:
- *   start  = L × 0.82  (~18% darker than selected)
- *   middle = L          (selected color)
- *   end    = L × 0.55  (~45% darker than selected)
+ * Build a 4-stop gradient ramp: darker → selected → selected → darker
+ * Returns objects with {start, middle, end} RGB values
  */
-function buildLayerGradient(hue, sat, luminance) {
-  if (luminance < GRADIENT_BLACK_THRESHOLD) return null;
-
-  const startL  = luminance * 0.82;
-  const endL    = luminance * 0.55;
-
-  const [startR, startG, startB] = hslToRgb(hue, sat, startL);
-  const [midR,   midG,   midB]   = hslToRgb(hue, sat, luminance);
-  const [endR,   endG,   endB]   = hslToRgb(hue, sat, endL);
+function buildGradient(r, g, b) {
+  // Darken by 30% for shadow side, lighten by 10% for highlight side
+  const shadowR   = Math.max(0, (r * 0.7) | 0);
+  const shadowG   = Math.max(0, (g * 0.7) | 0);
+  const shadowB   = Math.max(0, (b * 0.7) | 0);
+  const highlightR = Math.min(255, (r * 1.1) | 0);
+  const highlightG = Math.min(255, (g * 1.1) | 0);
+  const highlightB = Math.min(255, (b * 1.1) | 0);
 
   return {
-    start:  { r: startR, g: startG, b: startB },
-    middle: { r: midR,   g: midG,   b: midB   },
-    end:    { r: endR,   g: endG,   b: endB   },
+    start:  { r: shadowR,   g: shadowG,   b: shadowB },
+    middle: { r,           g,           b },
+    end:    { r: highlightR, g: highlightG, b: highlightB },
   };
 }
 
 /**
- * Pre-compute one gradient per active layer.  Returns an object with keys
- * map / data / label; each value is a gradient stops object or null.
+ * Calculate gradient color for a given pixel by projecting onto the 105° axis.
+ * Writes result to the provided output array to avoid object allocation.
+ * 
+ * @param {Object} grad - Gradient definition with start, middle, end RGB
+ * @param {number} pixelIndex - Linear pixel index
+ * @param {number} width - Image width
+ * @param {number} height - Image height
+ * @param {Uint8Array} out - Output array [r, g, b] to write result into
  */
-function computeGradientColors(sliders) {
-  const { mapHue, mapSat, mapLuminance,
-          dataHue, dataSat, dataLuminance,
-          labelHue, labelSat, labelLuminance } = sliders;
-
-  return {
-    map:   buildLayerGradient(mapHue,   mapSat,   mapLuminance),
-    data:  buildLayerGradient(dataHue,  dataSat,  dataLuminance),
-    label: buildLayerGradient(labelHue, labelSat, labelLuminance),
-  };
-}
-
-/**
- * Sample the gradient for a single pixel.
- * t is computed by projecting (x, y) onto the 0° gradient axis and
- * normalising to [0, 1] across the image diagonal in that direction.
- * A smoothstep curve is applied so transitions feel natural.
- *
- * Three-stop mapping:
- *   t ∈ [0, 0.4]  →  start  → middle  (slightly-darker ramps up to selected)
- *   t ∈ [0.4, 1]  →  middle → end     (selected ramps down to notably-darker)
- *
- * The midpoint is placed at t=0.4 instead of 0.5 so the selected color
- * "peaks" slightly earlier, giving a more natural highlight feel.
- */
-function getGradientColor(grad, pixelIndex, width, height) {
+function getGradientColor(grad, pixelIndex, width, height, out) {
   const x = pixelIndex % width;
   const y = Math.floor(pixelIndex / width);
 
@@ -378,43 +303,92 @@ function getGradientColor(grad, pixelIndex, width, height) {
   const RAMP_OUT = 0.8;
   const { start, middle, end } = grad;
 
-  let r, g, b;
   if (s <= RAMP_IN) {
     const lt = s / RAMP_IN; // 0→1 over leading ramp
-    r = (start.r + (middle.r - start.r) * lt) | 0;
-    g = (start.g + (middle.g - start.g) * lt) | 0;
-    b = (start.b + (middle.b - start.b) * lt) | 0;
+    out[0] = (start.r + (middle.r - start.r) * lt) | 0;
+    out[1] = (start.g + (middle.g - start.g) * lt) | 0;
+    out[2] = (start.b + (middle.b - start.b) * lt) | 0;
   } else if (s <= RAMP_OUT) {
     // flat plateau — pure selected color
-    r = middle.r; g = middle.g; b = middle.b;
+    out[0] = middle.r;
+    out[1] = middle.g;
+    out[2] = middle.b;
   } else {
     const lt = (s - RAMP_OUT) / (1 - RAMP_OUT); // 0→1 over trailing ramp
-    r = (middle.r + (end.r - middle.r) * lt) | 0;
-    g = (middle.g + (end.g - middle.g) * lt) | 0;
-    b = (middle.b + (end.b - middle.b) * lt) | 0;
+    out[0] = (middle.r + (end.r - middle.r) * lt) | 0;
+    out[1] = (middle.g + (end.g - middle.g) * lt) | 0;
+    out[2] = (middle.b + (end.b - middle.b) * lt) | 0;
   }
-
-  return { r, g, b };
 }
 
 // ── Message handler ───────────────────────────────────────────────────────────
+
+/**
+ * Validate classify message structure
+ * @param {Object} msg - Worker message
+ * @returns {boolean} True if message is valid
+ */
+function isValidClassifyMsg(msg) {
+  return msg &&
+    typeof msg.requestId === 'number' &&
+    msg.pixelData instanceof Uint8ClampedArray &&
+    typeof msg.width === 'number' &&
+    typeof msg.height === 'number' &&
+    msg.width > 0 &&
+    msg.height > 0;
+}
+
+/**
+ * Validate render message structure
+ * @param {Object} msg - Worker message
+ * @returns {boolean} True if message is valid
+ */
+function isValidRenderMsg(msg) {
+  return msg &&
+    typeof msg.requestId === 'number' &&
+    msg.pixelData instanceof Uint8ClampedArray &&
+    msg.mask instanceof Uint8Array &&
+    typeof msg.width === 'number' &&
+    typeof msg.height === 'number' &&
+    msg.width > 0 &&
+    msg.height > 0 &&
+    typeof msg.sliders === 'object' &&
+    msg.sliders !== null;
+}
 
 self.onmessage = function(e) {
   const msg = e.data;
 
   if (msg.type === 'classify') {
-    const { requestId, pixelData, width, height } = msg;
-    const mask = classify(pixelData, width, height);
-    let mapCount = 0, textCount = 0;
-    for (let i = 0; i < mask.length; i++) {
-      if (mask[i] === MASK_MAP) mapCount++;
-      else if (mask[i] === MASK_DATA || mask[i] === MASK_LABEL) textCount++;
+    if (!isValidClassifyMsg(msg)) {
+      console.error('Invalid classify message:', msg);
+      self.postMessage({ type: 'error', requestId: msg.requestId ?? 0, message: 'Invalid classify message structure' });
+      return;
     }
-    self.postMessage({ type: 'classified', requestId, mask, mapCount, textCount }, [mask.buffer]);
+    
+    const { requestId, pixelData, width, height } = msg;
+    try {
+      const mask = classify(pixelData, width, height);
+      let mapCount = 0, textCount = 0;
+      for (let i = 0; i < mask.length; i++) {
+        if (mask[i] === MASK_MAP) mapCount++;
+        else if (mask[i] === MASK_DATA || mask[i] === MASK_LABEL) textCount++;
+      }
+      self.postMessage({ type: 'classified', requestId, mask, mapCount, textCount }, [mask.buffer]);
+    } catch (err) {
+      console.error('Worker classify error:', err);
+      self.postMessage({ type: 'error', requestId, message: err.message });
+    }
     return;
   }
 
   if (msg.type === 'render') {
+    if (!isValidRenderMsg(msg)) {
+      console.error('Invalid render message:', msg);
+      self.postMessage({ type: 'error', requestId: msg.requestId ?? 0, message: 'Invalid render message structure' });
+      return;
+    }
+    
     const { requestId, pixelData, mask, width, height, sliders, downscale, gradientEnabled } = msg;
     try {
       const result = render(pixelData, mask, width, height, sliders, downscale, gradientEnabled);
@@ -428,4 +402,8 @@ self.onmessage = function(e) {
     }
     return;
   }
+  
+  // Unknown message type
+  console.error('Unknown worker message type:', msg.type);
+  self.postMessage({ type: 'error', requestId: msg.requestId ?? 0, message: `Unknown message type: ${msg.type}` });
 };
