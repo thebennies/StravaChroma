@@ -75,8 +75,8 @@ export function getSavedGroupSelection() {
   } catch {
     // Ignore localStorage errors
   }
-  // Default: all groups selected
-  return [...ALL_GROUPS];
+  // Default: show only running/shoe groups + Mono
+  return ['Kopi', 'ADIZERO', 'Asics *Blast', 'Hoka Clifton', 'Running', MANDATORY_GROUP];
 }
 
 export function saveGroupSelection(selectedGroups) {
