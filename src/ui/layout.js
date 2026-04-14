@@ -169,7 +169,7 @@ function buildMobileLayout(app, { onStartOver, onDocs } = {}) {
   const controlsWrapper = document.createElement('div');
   controlsWrapper.id = 'controls-wrapper';
   controlsWrapper.className = 'flex-shrink-0 bg-surface border-t border-border z-20 flex flex-col';
-  controlsWrapper.style.height = '40vh';
+  controlsWrapper.style.height = '50vh';
 
   const controlsContainer = document.createElement('div');
   controlsContainer.id = 'controls-container';
