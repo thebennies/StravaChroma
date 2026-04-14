@@ -1,5 +1,6 @@
 import { PRESETS } from '../constants.js';
 import { navBtnClass } from './controls-utils.js';
+import { registerModal, openModal, closeActiveModal } from './modal-manager.js';
 
 export function buildLayerSection(title, layer, { initialHue, initialSat, initialLuminance, presetIndex, onSliderChange, onPresetChange }) {
   const section = document.createElement('div');
@@ -171,75 +172,255 @@ export function buildSliderRow(id, label, min, max, initial, type, layer, onChan
 }
 
 export function buildPresetRow(layer, initialIndex, onChange) {
+  let currentIndex = initialIndex;
+  const neutralIdx = PRESETS.findIndex(p => p.name === 'Black');
+
+  function presetColor(idx) {
+    const p = PRESETS[idx];
+    return `hsl(${p.hue}, ${Math.round(p.sat * 100)}%, ${Math.round(p.luminance * 100)}%)`;
+  }
+
+  function updateTrigger(btn, idx) {
+    const swatch = btn.querySelector('[data-swatch]');
+    const label = btn.querySelector('[data-label]');
+    if (idx === -1 || !PRESETS[idx]) {
+      swatch.style.background = 'transparent';
+      label.textContent = '';
+    } else {
+      swatch.style.background = presetColor(idx);
+      label.textContent = PRESETS[idx].name;
+    }
+  }
+
+  // Row container
   const row = document.createElement('div');
   row.className = 'flex items-center gap-2';
 
-  const select = document.createElement('select');
-  select.id = `${layer}-preset-select`;
-  select.className = [
-    'flex-1 bg-surface-variant border border-border',
-    'text-xs text-text-primary',
-    'px-3 py-2 rounded-lg cursor-pointer',
-    'focus:outline-none focus:border-primary',
-    'appearance-none',
-  ].join(' ');
-  select.setAttribute('aria-label', `${layer} color preset`);
-
-  for (let i = 0; i < PRESETS.length; i++) {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = PRESETS[i].name;
-    if (i === initialIndex) opt.selected = true;
-    select.appendChild(opt);
-  }
-
-  // Wrapper for select with arrow
-  const selectWrapper = document.createElement('div');
-  selectWrapper.className = 'relative flex-1';
-  selectWrapper.appendChild(select);
-
-  const arrow = document.createElement('span');
-  arrow.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none text-xs';
-  arrow.setAttribute('aria-hidden', 'true');
-  arrow.textContent = '\u25BE';
-  selectWrapper.appendChild(arrow);
-
+  // Prev button
   const prevBtn = document.createElement('button');
   prevBtn.className = navBtnClass();
   prevBtn.textContent = '\u2039';
   prevBtn.title = 'Previous preset';
   prevBtn.setAttribute('aria-label', 'Previous color preset');
 
+  // Trigger button (opens modal)
+  const triggerBtn = document.createElement('button');
+  triggerBtn.className = [
+    'flex-1 flex items-center gap-2 px-3 py-2',
+    'bg-surface-variant border border-border rounded-lg cursor-pointer',
+    'text-xs text-text-primary',
+    'hover:border-primary focus:outline-none focus:border-primary',
+    'transition-colors duration-150',
+  ].join(' ');
+  triggerBtn.setAttribute('aria-label', `${layer} color preset`);
+  triggerBtn.setAttribute('aria-haspopup', 'dialog');
+
+  const triggerSwatch = document.createElement('span');
+  triggerSwatch.setAttribute('data-swatch', '');
+  triggerSwatch.style.cssText = `width:1rem;height:1rem;border-radius:50%;background:${presetColor(currentIndex)};flex-shrink:0;`;
+
+  const triggerLabel = document.createElement('span');
+  triggerLabel.setAttribute('data-label', '');
+  triggerLabel.className = 'flex-1 truncate text-left';
+  triggerLabel.textContent = PRESETS[currentIndex].name;
+
+  const chevron = document.createElement('span');
+  chevron.className = 'text-text-secondary text-xs flex-shrink-0';
+  chevron.setAttribute('aria-hidden', 'true');
+  chevron.textContent = '\u25BE';
+
+  triggerBtn.appendChild(triggerSwatch);
+  triggerBtn.appendChild(triggerLabel);
+  triggerBtn.appendChild(chevron);
+
+  // Next button
   const nextBtn = document.createElement('button');
   nextBtn.className = navBtnClass();
   nextBtn.textContent = '\u203A';
   nextBtn.title = 'Next preset';
   nextBtn.setAttribute('aria-label', 'Next color preset');
 
-  select.addEventListener('change', () => {
-    onChange(Number(select.value));
+  row.appendChild(prevBtn);
+  row.appendChild(triggerBtn);
+  row.appendChild(nextBtn);
+
+  // Modal overlay — appended to document.body
+  const overlay = document.createElement('div');
+  overlay.style.display = 'none';
+  overlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Select Preset');
+
+  const content = document.createElement('div');
+  content.className = 'bg-surface border border-border rounded-xl shadow-2xl w-full max-w-xs mx-4 flex flex-col max-h-[70vh]';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'px-4 py-3 border-b border-border flex items-center justify-between flex-shrink-0';
+
+  const modalTitle = document.createElement('span');
+  modalTitle.className = 'text-sm font-semibold text-text-primary';
+  modalTitle.textContent = 'Select Preset';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = [
+    'w-7 h-7 flex items-center justify-center rounded-lg cursor-pointer',
+    'text-text-secondary hover:text-text-primary hover:bg-surface-variant',
+    'transition-colors duration-150',
+  ].join(' ');
+  closeBtn.setAttribute('aria-label', 'Close preset selector');
+  closeBtn.textContent = '\u00D7';
+
+  header.appendChild(modalTitle);
+  header.appendChild(closeBtn);
+
+  // Scrollable list
+  const list = document.createElement('div');
+  list.className = 'overflow-y-auto flex-1 px-2 py-2 flex flex-col gap-0.5';
+
+  // Build list rows — one per preset, with a neutrals separator
+  const listItems = [];
+
+  for (let i = 0; i < PRESETS.length; i++) {
+    if (i === neutralIdx) {
+      const sep = document.createElement('div');
+      sep.className = 'flex items-center gap-2 px-3 py-1 text-xs text-text-secondary';
+      sep.setAttribute('aria-hidden', 'true');
+      const lineL = document.createElement('span');
+      lineL.className = 'flex-1 border-t border-border';
+      const sepLabel = document.createElement('span');
+      sepLabel.textContent = 'Neutrals';
+      const lineR = document.createElement('span');
+      lineR.className = 'flex-1 border-t border-border';
+      sep.appendChild(lineL);
+      sep.appendChild(sepLabel);
+      sep.appendChild(lineR);
+      list.appendChild(sep);
+    }
+
+    const isSelected = i === currentIndex;
+    const item = document.createElement('button');
+    item.className = [
+      'flex items-center gap-3 w-full px-3 py-2 rounded-lg cursor-pointer text-left',
+      'text-xs text-text-primary hover:bg-surface-variant transition-colors duration-150',
+      isSelected ? 'bg-surface-variant font-semibold' : '',
+    ].filter(Boolean).join(' ');
+    item.setAttribute('data-index', i);
+
+    const itemSwatch = document.createElement('span');
+    itemSwatch.style.cssText = `width:1rem;height:1rem;border-radius:50%;background:${presetColor(i)};flex-shrink:0;`;
+
+    const itemLabel = document.createElement('span');
+    itemLabel.className = 'flex-1 truncate';
+    itemLabel.textContent = PRESETS[i].name;
+
+    const check = document.createElement('span');
+    check.setAttribute('data-check', '');
+    check.className = 'text-primary flex-shrink-0';
+    check.setAttribute('aria-hidden', 'true');
+    check.textContent = '\u2713';
+    check.style.visibility = isSelected ? 'visible' : 'hidden';
+
+    item.appendChild(itemSwatch);
+    item.appendChild(itemLabel);
+    item.appendChild(check);
+
+    const capturedIndex = i;
+    item.addEventListener('click', () => {
+      // Deselect previous
+      const prev = listItems[currentIndex];
+      if (prev) {
+        prev.classList.remove('bg-surface-variant', 'font-semibold');
+        prev.querySelector('[data-check]').style.visibility = 'hidden';
+      }
+      currentIndex = capturedIndex;
+      item.classList.add('bg-surface-variant', 'font-semibold');
+      check.style.visibility = 'visible';
+      updateTrigger(triggerBtn, currentIndex);
+      closeActiveModal();
+      onChange(currentIndex);
+    });
+
+    listItems.push(item);
+    list.appendChild(item);
+  }
+
+  content.appendChild(header);
+  content.appendChild(list);
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+
+  // Register with modal manager
+  const modalId = `preset-modal-${layer}`;
+  registerModal(modalId, {
+    onClose: () => {
+      overlay.style.display = 'none';
+      triggerBtn.focus();
+    },
+    getFocusableElements: () => Array.from(overlay.querySelectorAll('button')),
   });
 
+  // Open modal
+  triggerBtn.addEventListener('click', () => {
+    overlay.style.display = 'flex';
+    openModal(modalId, triggerBtn);
+    requestAnimationFrame(() => {
+      listItems[currentIndex]?.scrollIntoView({ block: 'nearest' });
+      closeBtn.focus();
+    });
+  });
+
+  closeBtn.addEventListener('click', () => closeActiveModal());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeActiveModal(); });
+
+  // Prev / next — cycle through presets without opening modal
   prevBtn.addEventListener('click', () => {
-    const cur = Number(select.value);
-    const next = (cur - 1 + PRESETS.length) % PRESETS.length;
-    select.value = next;
-    onChange(next);
+    const prev = listItems[currentIndex];
+    if (prev) {
+      prev.classList.remove('bg-surface-variant', 'font-semibold');
+      prev.querySelector('[data-check]').style.visibility = 'hidden';
+    }
+    currentIndex = currentIndex === -1 ? PRESETS.length - 1 : (currentIndex - 1 + PRESETS.length) % PRESETS.length;
+    const next = listItems[currentIndex];
+    if (next) {
+      next.classList.add('bg-surface-variant', 'font-semibold');
+      next.querySelector('[data-check]').style.visibility = 'visible';
+    }
+    updateTrigger(triggerBtn, currentIndex);
+    onChange(currentIndex);
   });
 
   nextBtn.addEventListener('click', () => {
-    const cur = Number(select.value);
-    const next = (cur + 1) % PRESETS.length;
-    select.value = next;
-    onChange(next);
+    const prev = listItems[currentIndex];
+    if (prev) {
+      prev.classList.remove('bg-surface-variant', 'font-semibold');
+      prev.querySelector('[data-check]').style.visibility = 'hidden';
+    }
+    currentIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % PRESETS.length;
+    const next = listItems[currentIndex];
+    if (next) {
+      next.classList.add('bg-surface-variant', 'font-semibold');
+      next.querySelector('[data-check]').style.visibility = 'visible';
+    }
+    updateTrigger(triggerBtn, currentIndex);
+    onChange(currentIndex);
   });
 
-  row.appendChild(prevBtn);
-  row.appendChild(selectWrapper);
-  row.appendChild(nextBtn);
-
+  // External setter (called by update() in buildLayerSection); idx may be -1 (custom color)
   function setValue(idx) {
-    select.value = idx;
+    const prev = listItems[currentIndex];
+    if (prev) {
+      prev.classList.remove('bg-surface-variant', 'font-semibold');
+      prev.querySelector('[data-check]').style.visibility = 'hidden';
+    }
+    currentIndex = idx;
+    const next = listItems[currentIndex];
+    if (next) {
+      next.classList.add('bg-surface-variant', 'font-semibold');
+      next.querySelector('[data-check]').style.visibility = 'visible';
+    }
+    updateTrigger(triggerBtn, currentIndex);
   }
 
   return { el: row, setValue };
