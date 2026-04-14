@@ -181,8 +181,15 @@ export function buildPresetRow(layer, initialIndex, onChange) {
   }
 
   function updateTrigger(btn, idx) {
-    btn.querySelector('[data-swatch]').style.background = presetColor(idx);
-    btn.querySelector('[data-label]').textContent = PRESETS[idx].name;
+    const swatch = btn.querySelector('[data-swatch]');
+    const label = btn.querySelector('[data-label]');
+    if (idx === -1 || !PRESETS[idx]) {
+      swatch.style.background = 'transparent';
+      label.textContent = '';
+    } else {
+      swatch.style.background = presetColor(idx);
+      label.textContent = PRESETS[idx].name;
+    }
   }
 
   // Row container
@@ -374,7 +381,7 @@ export function buildPresetRow(layer, initialIndex, onChange) {
       prev.classList.remove('bg-surface-variant', 'font-semibold');
       prev.querySelector('[data-check]').style.visibility = 'hidden';
     }
-    currentIndex = (currentIndex - 1 + PRESETS.length) % PRESETS.length;
+    currentIndex = currentIndex === -1 ? PRESETS.length - 1 : (currentIndex - 1 + PRESETS.length) % PRESETS.length;
     const next = listItems[currentIndex];
     if (next) {
       next.classList.add('bg-surface-variant', 'font-semibold');
@@ -390,7 +397,7 @@ export function buildPresetRow(layer, initialIndex, onChange) {
       prev.classList.remove('bg-surface-variant', 'font-semibold');
       prev.querySelector('[data-check]').style.visibility = 'hidden';
     }
-    currentIndex = (currentIndex + 1) % PRESETS.length;
+    currentIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % PRESETS.length;
     const next = listItems[currentIndex];
     if (next) {
       next.classList.add('bg-surface-variant', 'font-semibold');
@@ -400,7 +407,7 @@ export function buildPresetRow(layer, initialIndex, onChange) {
     onChange(currentIndex);
   });
 
-  // External setter (called by update() in buildLayerSection)
+  // External setter (called by update() in buildLayerSection); idx may be -1 (custom color)
   function setValue(idx) {
     const prev = listItems[currentIndex];
     if (prev) {
