@@ -72,15 +72,6 @@ export const DEFAULT_DATA_PRESET  = PRESETS.findIndex(p => p.name === 'White');
 export const DEFAULT_LABEL_PRESET = PRESETS.findIndex(p => p.name === 'White');
 
 export const COLORWAYS = [
-  // ── Auto-generated from single-layer color presets (same color on all layers)
-  ...PRESETS.map(p => ({
-    name:  p.name,
-    group: 'Mono',
-    map:   { hue: p.hue, sat: p.sat, luminance: p.luminance },
-    data:  { hue: p.hue, sat: p.sat, luminance: p.luminance },
-    label: { hue: p.hue, sat: p.sat, luminance: p.luminance },
-  })),
-  // ── Colorways from colorway.html ─────────────────────────────────────────
   {
     name:  "Brooks Coral & Black",
     group: 'Running',
@@ -459,7 +450,6 @@ export const COLORWAYS = [
     map:   { hue: 340, sat: 0.98, luminance: 0.59 },
     label: { hue: 220, sat: 0.20, luminance: 0.15 },
   },
-  // ── Mechanical Keyboard Keycap colorways ──────────────────────────────────
   {
     name:  "9009",
     group: 'MechKeeb',
@@ -529,13 +519,6 @@ export const COLORWAYS = [
     data:  { hue: 180, sat: 0.01, luminance: 0.45 },
     map:   { hue: 216, sat: 0.05, luminance: 0.78 },
     label: { hue: 6, sat: 0.76, luminance: 0.46 },
-  },
-  {
-    name:  "Dracula",
-    group: 'MechKeeb',
-    data:  { hue: 231, sat: 0.15, luminance: 0.18 },
-    map:   { hue: 265, sat: 0.89, luminance: 0.78 },
-    label: { hue: 135, sat: 0.94, luminance: 0.65 },
   },
   {
     name:  "Godspeed",
@@ -634,7 +617,7 @@ export const COLORWAYS = [
     data:  { hue: 240, sat: 0.02, luminance: 0.09 },
     map:   { hue: 37, sat: 0.45, luminance: 0.94 },
     label: { hue: 180, sat: 0.02, luminance: 0.23 },
-  },  // ── EPL Club colorways ────────────────────────────────────────────────────
+  },
   {
     name:  "Arsenal",
     group: 'EPL',
@@ -775,7 +758,6 @@ export const COLORWAYS = [
     map:   { hue: 345, sat: 0.06, luminance: 0.13 },
     label: { hue: 0, sat: 0.0, luminance: 1.00 },
   },
-  // ── NBA Team colorways ────────────────────────────────────────────────────
   {
     name:  "76ers",
     group: 'NBA',
@@ -986,7 +968,6 @@ export const COLORWAYS = [
     map:   { hue: 351, sat: 0.81, luminance: 0.49 },
     label: { hue: 203, sat: 0.16, luminance: 0.80 },
   },
-  // ── Liga Super Indonesia (ISL) colorways ────────────────────────────────────
   {
     name:  "Arema FC (Malang)",
     group: 'ISL',
@@ -1113,7 +1094,6 @@ export const COLORWAYS = [
     map:   { hue: 0, sat: 0, luminance: 0.12 },
     label: { hue: 0, sat: 0, luminance: 1 },
   },
-  // ── Movie colorways ─────────────────────────────────────────────────────────
   {
     name:  "Psycho (1960)",
     group: 'Movies',
@@ -1394,8 +1374,6 @@ export const COLORWAYS = [
     map:   { hue: 213, sat: 0.68, luminance: 0.15 },
     label: { hue: 41, sat: 0.98, luminance: 0.59 },
   },
-
-  // ── Star Wars colorways ─────────────────────────────────────────────────────
   {
     name:  "Ahsoka Tano",
     group: 'StarWars',
@@ -1767,8 +1745,6 @@ export const COLORWAYS = [
     map:   { hue: 25, sat: 0.35, luminance: 0.55 },
     label: { hue: 0, sat: 0, luminance: 0.94 },
   },
-
-  // ── Cyberpunk colorways ─────────────────────────────────────────────────────
   {
     name:  "Neon Nights",
     group: 'Cyberpunk',
@@ -1874,7 +1850,6 @@ export const COLORWAYS = [
     map:   { hue: 300, sat: 1, luminance: 0.5 },
     label: { hue: 120, sat: 0.26, luminance: 0.08 },
   },
-  // ── Retro colorways ─────────────────────────────────────────────────────────
   {
     name:  "Diner Chrome",
     group: 'Retro',
@@ -1980,8 +1955,6 @@ export const COLORWAYS = [
     map:   { hue: 111, sat: 0.25, luminance: 0.35 },
     label: { hue: 27, sat: 0.87, luminance: 0.67 },
   },
-
-  // ── Iconic Sneaker colorways ──────────────────────────────────────────────
   {
     name:  "Jordan 1 Bred",
     group: 'Sneakers',
@@ -2234,7 +2207,6 @@ export const COLORWAYS = [
     data:  { hue: 0,   sat: 0.0,  luminance: 0.07 },
     label: { hue: 38,  sat: 0.25, luminance: 0.77 },
   },
-  // ── Kopi — Indonesian coffee roasters & specialty shops ──────────────────────
   {
     name:  "Anomali Coffee",
     group: 'Kopi',
@@ -2340,7 +2312,6 @@ export const COLORWAYS = [
     map:   { hue: 22,  sat: 0.18, luminance: 0.14 },
     label: { hue: 38,  sat: 0.45, luminance: 0.89 },
   },
-  // ── ADIOS — adidas Adizero Evo SL & Adios Pro 4 colorways ────────────────
   {
     name:  "Aqua Splash Cloud White",
     group: 'ADIZERO',
@@ -2461,13 +2432,6 @@ export const COLORWAYS = [
     label: { hue: 338, sat: 0.8, luminance: 0.79 },
   },
   {
-    name:  "Lucid Lemon",
-    group: 'ADIZERO',
-    data:  { hue:  48, sat:  1.0, luminance:  0.50 },
-    map:   { hue:   0, sat:  0.0, luminance:  0.12 },
-    label: { hue:   0, sat:  0.0, luminance: 1.00 },
-  },
-  {
     name:  "Lucid Red",
     group: 'ADIZERO',
     data:  { hue: 355, sat:  0.96, luminance:  0.53 },
@@ -2565,7 +2529,6 @@ export const COLORWAYS = [
     map:   { hue:  45, sat:  0.92, luminance:  0.65 },
     label: { hue: 217, sat:  1.0, luminance:  0.31 },
   },
-  // ── Asics *Blast — Novablast 5 & Superblast colorways ─────────────────────
   {
     name:  "Black Carrier Grey",
     group: 'Asics *Blast',
@@ -2769,20 +2732,12 @@ export const COLORWAYS = [
     map:   { hue:   0, sat:    1, luminance: 0.75 },
     label: { hue:   0, sat:    0, luminance: 0.12 },
   },
-  // ── Hoka Clifton — Clifton 10 & prior colorways ────────────────────────────
   {
     name:  "Ash Grey Neon Green",
     group: 'Hoka Clifton',
     data:  { hue:   0, sat:    0, luminance: 0.47 },
     map:   { hue: 105, sat:    1, luminance:  0.5 },
     label: { hue:   0, sat:    0, luminance: 0.12 },
-  },
-  {
-    name:  "Black Silver",
-    group: 'Hoka Clifton',
-    data:  { hue:   0, sat:    0, luminance: 0.12 },
-    map:   { hue:   0, sat:    0, luminance: 0.75 },
-    label: { hue:   0, sat:    0, luminance:    1 },
   },
   {
     name:  "Black Silver",
@@ -2811,13 +2766,6 @@ export const COLORWAYS = [
     data:  { hue: 330, sat:    1, luminance: 0.65 },
     map:   { hue:  45, sat:  0.6, luminance:  0.9 },
     label: { hue:   0, sat:    0, luminance: 0.12 },
-  },
-  {
-    name:  "Cloud White Core Black",
-    group: 'Hoka Clifton',
-    data:  { hue:   0, sat:    0, luminance:    1 },
-    map:   { hue:   0, sat:    0, luminance: 0.12 },
-    label: { hue:   0, sat:    0, luminance:    1 },
   },
   {
     name:  "Cobalt Blue Ultramarine",
@@ -2945,260 +2893,6 @@ export const COLORWAYS = [
     map:   { hue: 174, sat:    1, luminance: 0.35 },
     label: { hue:   0, sat:    0, luminance:    1 },
   },
-  // ── Famous Brand colorways ────────────────────────────────────────────────
-  {
-    name:  "Apple",
-    group: 'Brand',
-    data:  { hue: 0,   sat: 0.0,  luminance: 0.00 },
-    map:   { hue: 240, sat: 0.11, luminance: 0.97 },
-    label: { hue: 195, sat: 0.06, luminance: 0.66 },
-  },
-  {
-    name:  "Google",
-    group: 'Brand',
-    data:  { hue: 217, sat: 0.89, luminance: 0.61 },
-    map:   { hue: 5,   sat: 0.81, luminance: 0.56 },
-    label: { hue: 45,  sat: 0.97, luminance: 0.50 },
-  },
-  {
-    name:  "Microsoft",
-    group: 'Brand',
-    data:  { hue: 13,  sat: 0.89, luminance: 0.54 },
-    map:   { hue: 79,  sat: 1.0,  luminance: 0.37 },
-    label: { hue: 199, sat: 1.0,  luminance: 0.47 },
-  },
-  {
-    name:  "Amazon",
-    group: 'Brand',
-    data:  { hue: 36,  sat: 1.0,  luminance: 0.50 },
-    map:   { hue: 213, sat: 0.28, luminance: 0.19 },
-    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
-  },
-  {
-    name:  "Meta",
-    group: 'Brand',
-    data:  { hue: 217, sat: 1.0,  luminance: 0.52 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 201, sat: 0.29, luminance: 0.16 },
-  },
-  {
-    name:  "YouTube",
-    group: 'Brand',
-    data:  { hue: 0,   sat: 1.0,  luminance: 0.50 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 0,   sat: 0.0,  luminance: 0.16 },
-  },
-  {
-    name:  "Spotify",
-    group: 'Brand',
-    data:  { hue: 141, sat: 0.73, luminance: 0.42 },
-    map:   { hue: 0,   sat: 0.11, luminance: 0.09 },
-    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
-  },
-  {
-    name:  "Netflix",
-    group: 'Brand',
-    data:  { hue: 1,   sat: 0.96, luminance: 0.47 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 0.08 },
-    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
-  },
-  {
-    name:  "TikTok",
-    group: 'Brand',
-    data:  { hue: 343, sat: 0.84, luminance: 0.52 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 0.00 },
-    label: { hue: 183, sat: 0.49, luminance: 0.61 },
-  },
-  {
-    name:  "Slack",
-    group: 'Brand',
-    data:  { hue: 299, sat: 0.53, luminance: 0.19 },
-    map:   { hue: 197, sat: 0.85, luminance: 0.58 },
-    label: { hue: 152, sat: 0.59, luminance: 0.44 },
-  },
-  {
-    name:  "Discord",
-    group: 'Brand',
-    data:  { hue: 235, sat: 0.85, luminance: 0.65 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 210, sat: 0.10, luminance: 0.15 },
-  },
-  {
-    name:  "Stripe",
-    group: 'Brand',
-    data:  { hue: 243, sat: 1.0,  luminance: 0.68 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 210, sat: 0.73, luminance: 0.15 },
-  },
-  {
-    name:  "PayPal",
-    group: 'Brand',
-    data:  { hue: 219, sat: 1.0,  luminance: 0.27 },
-    map:   { hue: 198, sat: 1.0,  luminance: 0.44 },
-    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
-  },
-  {
-    name:  "Visa",
-    group: 'Brand',
-    data:  { hue: 237, sat: 0.63, luminance: 0.27 },
-    map:   { hue: 44,  sat: 1.0,  luminance: 0.48 },
-    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
-  },
-  {
-    name:  "Mastercard",
-    group: 'Brand',
-    data:  { hue: 353, sat: 1.0,  luminance: 0.46 },
-    map:   { hue: 36,  sat: 0.93, luminance: 0.54 },
-    label: { hue: 22,  sat: 1.0,  luminance: 0.50 },
-  },
-  {
-    name:  "Coca-Cola",
-    group: 'Brand',
-    data:  { hue: 358, sat: 1.0,  luminance: 0.48 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 0,   sat: 0.0,  luminance: 0.00 },
-  },
-  {
-    name:  "Pepsi",
-    group: 'Brand',
-    data:  { hue: 209, sat: 1.0,  luminance: 0.29 },
-    map:   { hue: 349, sat: 0.86, luminance: 0.44 },
-    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
-  },
-  {
-    name:  "Starbucks",
-    group: 'Brand',
-    data:  { hue: 160, sat: 1.0,  luminance: 0.22 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 164, sat: 0.31, luminance: 0.17 },
-  },
-  {
-    name:  "McDonald's",
-    group: 'Brand',
-    data:  { hue: 44,  sat: 1.0,  luminance: 0.59 },
-    map:   { hue: 4,   sat: 0.77, luminance: 0.48 },
-    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
-  },
-  {
-    name:  "Red Bull",
-    group: 'Brand',
-    data:  { hue: 222, sat: 0.54, luminance: 0.29 },
-    map:   { hue: 345, sat: 0.74, luminance: 0.46 },
-    label: { hue: 47,  sat: 1.0,  luminance: 0.51 },
-  },
-  {
-    name:  "Nike",
-    group: 'Brand',
-    data:  { hue: 0,   sat: 0.0,  luminance: 0.07 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 24,  sat: 1.0,  luminance: 0.50 },
-  },
-  {
-    name:  "Adidas",
-    group: 'Brand',
-    data:  { hue: 0,   sat: 0.0,  luminance: 0.00 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 205, sat: 1.0,  luminance: 0.34 },
-  },
-  {
-    name:  "Hermès Brand",
-    group: 'Brand',
-    data:  { hue: 23,  sat: 0.90, luminance: 0.54 },
-    map:   { hue: 29,  sat: 0.32, luminance: 0.30 },
-    label: { hue: 45,  sat: 0.50, luminance: 0.92 },
-  },
-  {
-    name:  "Tiffany Brand",
-    group: 'Brand',
-    data:  { hue: 178, sat: 0.90, luminance: 0.38 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 0,   sat: 0.0,  luminance: 0.00 },
-  },
-  {
-    name:  "Louis Vuitton",
-    group: 'Brand',
-    data:  { hue: 30,  sat: 0.77, luminance: 0.10 },
-    map:   { hue: 39,  sat: 0.45, luminance: 0.61 },
-    label: { hue: 38,  sat: 0.52, luminance: 0.93 },
-  },
-  {
-    name:  "Supreme",
-    group: 'Brand',
-    data:  { hue: 355, sat: 0.79, luminance: 0.49 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 0,   sat: 0.0,  luminance: 0.00 },
-  },
-  {
-    name:  "Ferrari",
-    group: 'Brand',
-    data:  { hue: 0,   sat: 1.0,  luminance: 0.43 },
-    map:   { hue: 57,  sat: 1.0,  luminance: 0.50 },
-    label: { hue: 0,   sat: 0.0,  luminance: 0.00 },
-  },
-  {
-    name:  "Porsche",
-    group: 'Brand',
-    data:  { hue: 1,   sat: 0.63, luminance: 0.43 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 0.00 },
-    label: { hue: 40,  sat: 0.40, luminance: 0.59 },
-  },
-  {
-    name:  "Tesla",
-    group: 'Brand',
-    data:  { hue: 358, sat: 0.81, luminance: 0.52 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 0,   sat: 0.0,  luminance: 0.75 },
-  },
-  {
-    name:  "Lamborghini",
-    group: 'Brand',
-    data:  { hue: 43,  sat: 0.74, luminance: 0.49 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 0.00 },
-    label: { hue: 101, sat: 0.78, luminance: 0.41 },
-  },
-  {
-    name:  "BMW",
-    group: 'Brand',
-    data:  { hue: 215, sat: 0.77, luminance: 0.47 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 0,   sat: 0.0,  luminance: 0.15 },
-  },
-  {
-    name:  "Figma",
-    group: 'Brand',
-    data:  { hue: 14,  sat: 0.89, luminance: 0.53 },
-    map:   { hue: 266, sat: 1.0,  luminance: 0.68 },
-    label: { hue: 157, sat: 0.91, luminance: 0.43 },
-  },
-  {
-    name:  "GitHub",
-    group: 'Brand',
-    data:  { hue: 0,   sat: 0.0,  luminance: 0.09 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 134, sat: 0.61, luminance: 0.45 },
-  },
-  {
-    name:  "Notion",
-    group: 'Brand',
-    data:  { hue: 0,   sat: 0.0,  luminance: 0.00 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 60,  sat: 0.04, luminance: 0.90 },
-  },
-  {
-    name:  "Vercel",
-    group: 'Brand',
-    data:  { hue: 0,   sat: 0.0,  luminance: 0.00 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 212, sat: 1.0,  luminance: 0.48 },
-  },
-  {
-    name:  "Linear",
-    group: 'Brand',
-    data:  { hue: 234, sat: 0.56, luminance: 0.60 },
-    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
-    label: { hue: 240, sat: 0.21, luminance: 0.11 },
-  },
-  // ── Luxury Fashion House colorways ───────────────────────────────────────
   {
     name:  "Hermès Orange Box",
     group: 'Luxury',
@@ -3297,7 +2991,6 @@ export const COLORWAYS = [
     map:   { hue: 0,   sat: 0.0,  luminance: 0.00 },
     label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
   },
-  // ── Comics — DC, Marvel, Image, Dark Horse ────────────────────────────────────
   {
     name:  "Dark Horse Hellboy",
     group: 'Comics',
@@ -3522,7 +3215,6 @@ export const COLORWAYS = [
     map:   { hue: 212, sat: 0.78, luminance: 0.14 },
     label: { hue: 210, sat: 0.12, luminance: 0.08 },
   },
-  // ── TMNT ──────────────────────────────────────────────────────────────────────
   {
     name:  "TMNT April O'Neil",
     group: 'TMNT',
@@ -3565,7 +3257,6 @@ export const COLORWAYS = [
     map:   { hue: 36,  sat: 0.55, luminance: 0.76 },
     label: { hue: 0,   sat: 0.0,  luminance: 0.16 },
   },
-  // ── IDE Theme colorways ───────────────────────────────────────────────────
   {
     name:  "Monokai",
     group: 'IDE',
@@ -3790,7 +3481,258 @@ export const COLORWAYS = [
     data:  { hue: 0,   sat: 0.0,  luminance: 0.78 },
     label: { hue: 210, sat: 0.50, luminance: 0.65 },
   },
-].sort((a, b) => {
+  {
+    name:  "Adidas",
+    group: 'Brand',
+    data:  { hue: 0,   sat: 0.0,  luminance: 0.00 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 205, sat: 1.0,  luminance: 0.34 },
+  },
+  {
+    name:  "Amazon",
+    group: 'Brand',
+    data:  { hue: 36,  sat: 1.0,  luminance: 0.50 },
+    map:   { hue: 213, sat: 0.28, luminance: 0.19 },
+    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
+  },
+  {
+    name:  "Apple",
+    group: 'Brand',
+    data:  { hue: 0,   sat: 0.0,  luminance: 0.00 },
+    map:   { hue: 240, sat: 0.11, luminance: 0.97 },
+    label: { hue: 195, sat: 0.06, luminance: 0.66 },
+  },
+  {
+    name:  "BMW",
+    group: 'Brand',
+    data:  { hue: 215, sat: 0.77, luminance: 0.47 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 0,   sat: 0.0,  luminance: 0.15 },
+  },
+  {
+    name:  "Coca-Cola",
+    group: 'Brand',
+    data:  { hue: 358, sat: 1.0,  luminance: 0.48 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 0,   sat: 0.0,  luminance: 0.00 },
+  },
+  {
+    name:  "Discord",
+    group: 'Brand',
+    data:  { hue: 235, sat: 0.85, luminance: 0.65 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 210, sat: 0.10, luminance: 0.15 },
+  },
+  {
+    name:  "Ferrari",
+    group: 'Brand',
+    data:  { hue: 0,   sat: 1.0,  luminance: 0.43 },
+    map:   { hue: 57,  sat: 1.0,  luminance: 0.50 },
+    label: { hue: 0,   sat: 0.0,  luminance: 0.00 },
+  },
+  {
+    name:  "Figma",
+    group: 'Brand',
+    data:  { hue: 14,  sat: 0.89, luminance: 0.53 },
+    map:   { hue: 266, sat: 1.0,  luminance: 0.68 },
+    label: { hue: 157, sat: 0.91, luminance: 0.43 },
+  },
+  {
+    name:  "GitHub",
+    group: 'Brand',
+    data:  { hue: 0,   sat: 0.0,  luminance: 0.09 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 134, sat: 0.61, luminance: 0.45 },
+  },
+  {
+    name:  "Google",
+    group: 'Brand',
+    data:  { hue: 217, sat: 0.89, luminance: 0.61 },
+    map:   { hue: 5,   sat: 0.81, luminance: 0.56 },
+    label: { hue: 45,  sat: 0.97, luminance: 0.50 },
+  },
+  {
+    name:  "Hermès Brand",
+    group: 'Brand',
+    data:  { hue: 23,  sat: 0.90, luminance: 0.54 },
+    map:   { hue: 29,  sat: 0.32, luminance: 0.30 },
+    label: { hue: 45,  sat: 0.50, luminance: 0.92 },
+  },
+  {
+    name:  "Lamborghini",
+    group: 'Brand',
+    data:  { hue: 43,  sat: 0.74, luminance: 0.49 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 0.00 },
+    label: { hue: 101, sat: 0.78, luminance: 0.41 },
+  },
+  {
+    name:  "Linear",
+    group: 'Brand',
+    data:  { hue: 234, sat: 0.56, luminance: 0.60 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 240, sat: 0.21, luminance: 0.11 },
+  },
+  {
+    name:  "Louis Vuitton",
+    group: 'Brand',
+    data:  { hue: 30,  sat: 0.77, luminance: 0.10 },
+    map:   { hue: 39,  sat: 0.45, luminance: 0.61 },
+    label: { hue: 38,  sat: 0.52, luminance: 0.93 },
+  },
+  {
+    name:  "Mastercard",
+    group: 'Brand',
+    data:  { hue: 353, sat: 1.0,  luminance: 0.46 },
+    map:   { hue: 36,  sat: 0.93, luminance: 0.54 },
+    label: { hue: 22,  sat: 1.0,  luminance: 0.50 },
+  },
+  {
+    name:  "McDonald's",
+    group: 'Brand',
+    data:  { hue: 44,  sat: 1.0,  luminance: 0.59 },
+    map:   { hue: 4,   sat: 0.77, luminance: 0.48 },
+    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
+  },
+  {
+    name:  "Meta",
+    group: 'Brand',
+    data:  { hue: 217, sat: 1.0,  luminance: 0.52 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 201, sat: 0.29, luminance: 0.16 },
+  },
+  {
+    name:  "Microsoft",
+    group: 'Brand',
+    data:  { hue: 13,  sat: 0.89, luminance: 0.54 },
+    map:   { hue: 79,  sat: 1.0,  luminance: 0.37 },
+    label: { hue: 199, sat: 1.0,  luminance: 0.47 },
+  },
+  {
+    name:  "Netflix",
+    group: 'Brand',
+    data:  { hue: 1,   sat: 0.96, luminance: 0.47 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 0.08 },
+    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
+  },
+  {
+    name:  "Nike",
+    group: 'Brand',
+    data:  { hue: 0,   sat: 0.0,  luminance: 0.07 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 24,  sat: 1.0,  luminance: 0.50 },
+  },
+  {
+    name:  "Notion",
+    group: 'Brand',
+    data:  { hue: 0,   sat: 0.0,  luminance: 0.00 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 60,  sat: 0.04, luminance: 0.90 },
+  },
+  {
+    name:  "PayPal",
+    group: 'Brand',
+    data:  { hue: 219, sat: 1.0,  luminance: 0.27 },
+    map:   { hue: 198, sat: 1.0,  luminance: 0.44 },
+    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
+  },
+  {
+    name:  "Pepsi",
+    group: 'Brand',
+    data:  { hue: 209, sat: 1.0,  luminance: 0.29 },
+    map:   { hue: 349, sat: 0.86, luminance: 0.44 },
+    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
+  },
+  {
+    name:  "Porsche",
+    group: 'Brand',
+    data:  { hue: 1,   sat: 0.63, luminance: 0.43 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 0.00 },
+    label: { hue: 40,  sat: 0.40, luminance: 0.59 },
+  },
+  {
+    name:  "Red Bull",
+    group: 'Brand',
+    data:  { hue: 222, sat: 0.54, luminance: 0.29 },
+    map:   { hue: 345, sat: 0.74, luminance: 0.46 },
+    label: { hue: 47,  sat: 1.0,  luminance: 0.51 },
+  },
+  {
+    name:  "Slack",
+    group: 'Brand',
+    data:  { hue: 299, sat: 0.53, luminance: 0.19 },
+    map:   { hue: 197, sat: 0.85, luminance: 0.58 },
+    label: { hue: 152, sat: 0.59, luminance: 0.44 },
+  },
+  {
+    name:  "Spotify",
+    group: 'Brand',
+    data:  { hue: 141, sat: 0.73, luminance: 0.42 },
+    map:   { hue: 0,   sat: 0.11, luminance: 0.09 },
+    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
+  },
+  {
+    name:  "Starbucks",
+    group: 'Brand',
+    data:  { hue: 160, sat: 1.0,  luminance: 0.22 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 164, sat: 0.31, luminance: 0.17 },
+  },
+  {
+    name:  "Stripe",
+    group: 'Brand',
+    data:  { hue: 243, sat: 1.0,  luminance: 0.68 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 210, sat: 0.73, luminance: 0.15 },
+  },
+  {
+    name:  "Supreme",
+    group: 'Brand',
+    data:  { hue: 355, sat: 0.79, luminance: 0.49 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 0,   sat: 0.0,  luminance: 0.00 },
+  },
+  {
+    name:  "Tesla",
+    group: 'Brand',
+    data:  { hue: 358, sat: 0.81, luminance: 0.52 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 0,   sat: 0.0,  luminance: 0.75 },
+  },
+  {
+    name:  "Tiffany Brand",
+    group: 'Brand',
+    data:  { hue: 178, sat: 0.90, luminance: 0.38 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 0,   sat: 0.0,  luminance: 0.00 },
+  },
+  {
+    name:  "TikTok",
+    group: 'Brand',
+    data:  { hue: 343, sat: 0.84, luminance: 0.52 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 0.00 },
+    label: { hue: 183, sat: 0.49, luminance: 0.61 },
+  },
+  {
+    name:  "Vercel",
+    group: 'Brand',
+    data:  { hue: 0,   sat: 0.0,  luminance: 0.00 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 212, sat: 1.0,  luminance: 0.48 },
+  },
+  {
+    name:  "Visa",
+    group: 'Brand',
+    data:  { hue: 237, sat: 0.63, luminance: 0.27 },
+    map:   { hue: 44,  sat: 1.0,  luminance: 0.48 },
+    label: { hue: 0,   sat: 0.0,  luminance: 1.00 },
+  },
+  {
+    name:  "YouTube",
+    group: 'Brand',
+    data:  { hue: 0,   sat: 1.0,  luminance: 0.50 },
+    map:   { hue: 0,   sat: 0.0,  luminance: 1.00 },
+    label: { hue: 0,   sat: 0.0,  luminance: 0.16 },
+  },].sort((a, b) => {
   const ORDER = ['Mono', 'Running', 'Kopi', 'ADIZERO', 'Asics *Blast', 'Hoka Clifton', 'Sneakers', 'Luxury', 'Brand', 'EPL', 'ISL', 'NBA', 'Movies', 'Comics', 'StarWars', 'TMNT', 'Retro', 'Cyberpunk', 'MechKeeb', 'IDE'];
   const ai = ORDER.indexOf(a.group);
   const bi = ORDER.indexOf(b.group);
