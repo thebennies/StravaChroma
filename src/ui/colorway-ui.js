@@ -6,8 +6,11 @@ import {
   saveFavorites,
   saveGroupSelection,
   saveSearchTerm,
-  ALL_GROUPS,
+  getAllGroups,
   MANDATORY_GROUP,
+  CUSTOM_GROUP,
+  getCustomColorways,
+  removeCustomColorway,
   navBtnClass,
   colorwayItemClass,
   swatchColor,
@@ -18,7 +21,7 @@ const SVG_HEART_OUTLINE = `<svg xmlns="http://www.w3.org/2000/svg" width="14" he
 const SVG_HEART_FILLED  = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
 const SVG_TRASH = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
 
-export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSwap, signal } = {}) {
+export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = false, onSwap, signal, onDeleteCustom } = {}) {
   const panel = document.createElement('div');
   panel.className = 'flex flex-col';
   if (mobile) {
@@ -28,11 +31,23 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
   let selectedGroups = getSavedGroupSelection();
   let favorites = getSavedFavorites();
 
-  // Filter colorways based on selected groups
+  // Merged array: custom colorways first, then built-in presets
+  let mergedColorways = getMergedColorways();
+
+  function getMergedColorways() {
+    return [...getCustomColorways(), ...colorwayPresets];
+  }
+
+  // Filter colorways based on selected groups (from merged list)
   function getFilteredColorways() {
-    return colorwayPresets
+    return mergedColorways
       .filter(cw => selectedGroups.includes(cw.group))
       .sort((a, b) => {
+        // Custom group first
+        const aIsCustom = a.group === CUSTOM_GROUP;
+        const bIsCustom = b.group === CUSTOM_GROUP;
+        if (aIsCustom !== bIsCustom) return aIsCustom ? -1 : 1;
+        // Mono last
         const aIsMono = a.group === MANDATORY_GROUP;
         const bIsMono = b.group === MANDATORY_GROUP;
         if (aIsMono === bIsMono) return 0;
@@ -72,7 +87,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
     if (filteredColorways.length === 0) return;
     const randomFilteredIdx = Math.floor(Math.random() * filteredColorways.length);
     const selectedColorway = filteredColorways[randomFilteredIdx];
-    const originalIdx = colorwayPresets.indexOf(selectedColorway);
+    const originalIdx = mergedColorways.indexOf(selectedColorway);
     onColorway(originalIdx);
   });
 
@@ -200,7 +215,8 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
     const favSet = new Set(favorites.map(f => f.fingerprint));
 
     filteredColorways.forEach((colorway) => {
-      const originalIdx = colorwayPresets.indexOf(colorway);
+      const originalIdx = mergedColorways.indexOf(colorway);
+      const isCustom = colorway.group === CUSTOM_GROUP;
 
       if (colorway.group !== currentGroup) {
         const groupHeader = document.createElement('p');
@@ -242,6 +258,21 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
       if (favSet.has(fp)) {
         item.insertBefore(buildFavoritedHeartBtn(colorway, fp), item.lastChild);
       }
+
+      // Trash button for custom colorways
+      if (isCustom) {
+        const trashBtn = document.createElement('button');
+        trashBtn.className = 'w-7 h-7 flex items-center justify-center rounded flex-shrink-0 text-text-muted hover:text-error transition-colors duration-150 cursor-pointer';
+        trashBtn.setAttribute('aria-label', `Delete ${colorway.name}`);
+        trashBtn.innerHTML = SVG_TRASH;
+        trashBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!confirm(`Delete "${colorway.name}"?`)) return;
+          removeCustomColorway(fp);
+          refresh();
+        });
+        item.insertBefore(trashBtn, item.firstChild);
+      }
     });
 
     // Restore active state if still visible
@@ -250,7 +281,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
       if (matching) {
         activeEl = matching.el;
         activeEl.className = colorwayItemClass(true);
-        attachHeartToRow(activeEl, colorwayPresets[activeIdx]);
+        attachHeartToRow(activeEl, mergedColorways[activeIdx]);
       } else {
         activeEl = null;
       }
@@ -263,7 +294,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
     if (filteredColorways.length === 0) return;
     const currentFilteredIdx = items.findIndex(i => i.originalIdx === activeIdx);
     const newFilteredIdx = currentFilteredIdx <= 0 ? filteredColorways.length - 1 : currentFilteredIdx - 1;
-    const newOriginalIdx = items[newFilteredIdx]?.originalIdx ?? colorwayPresets.indexOf(filteredColorways[0]);
+    const newOriginalIdx = items[newFilteredIdx]?.originalIdx ?? mergedColorways.indexOf(filteredColorways[0]);
     onColorway(newOriginalIdx);
   });
 
@@ -271,7 +302,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
     if (filteredColorways.length === 0) return;
     const currentFilteredIdx = items.findIndex(i => i.originalIdx === activeIdx);
     const newFilteredIdx = currentFilteredIdx >= filteredColorways.length - 1 ? 0 : currentFilteredIdx + 1;
-    const newOriginalIdx = items[newFilteredIdx]?.originalIdx ?? colorwayPresets.indexOf(filteredColorways[0]);
+    const newOriginalIdx = items[newFilteredIdx]?.originalIdx ?? mergedColorways.indexOf(filteredColorways[0]);
     onColorway(newOriginalIdx);
   });
 
@@ -321,75 +352,83 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
   const groupList = document.createElement('div');
   groupList.className = 'flex-1 min-h-0 overflow-y-auto px-2 py-2';
 
-  const groupCheckboxes = [];
+  let groupCheckboxes = [];
 
-  ALL_GROUPS.forEach(group => {
-    const isMandatory = group === MANDATORY_GROUP;
-    const row = document.createElement('div');
-    row.className = 'flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-surface-variant cursor-pointer';
+  function buildGroupCheckboxes() {
+    groupList.innerHTML = '';
+    groupCheckboxes = [];
+    const currentGroups = getAllGroups();
 
-    const checkbox = document.createElement('div');
-    checkbox.className = `w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-      isMandatory
-        ? 'bg-primary border-primary cursor-not-allowed'
-        : 'border-border bg-surface'
-    }`;
+    currentGroups.forEach(group => {
+      const isMandatory = group === MANDATORY_GROUP || group === CUSTOM_GROUP;
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-surface-variant cursor-pointer';
 
-    const checkIcon = document.createElement('span');
-    checkIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-    checkIcon.className = isMandatory ? 'text-white' : 'text-white opacity-0';
+      const checkbox = document.createElement('div');
+      checkbox.className = `w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+        isMandatory
+          ? 'bg-primary border-primary cursor-not-allowed'
+          : 'border-border bg-surface'
+      }`;
 
-    checkbox.appendChild(checkIcon);
+      const checkIcon = document.createElement('span');
+      checkIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+      checkIcon.className = isMandatory ? 'text-white' : 'text-white opacity-0';
 
-    const label = document.createElement('span');
-    label.className = 'text-sm text-text-primary flex-1';
-    label.textContent = group;
+      checkbox.appendChild(checkIcon);
 
-    if (isMandatory) {
-      const mandatoryBadge = document.createElement('span');
-      mandatoryBadge.className = 'text-xs text-text-muted';
-      mandatoryBadge.textContent = 'Required';
-      row.appendChild(checkbox);
-      row.appendChild(label);
-      row.appendChild(mandatoryBadge);
-    } else {
-      row.appendChild(checkbox);
-      row.appendChild(label);
-    }
+      const labelEl = document.createElement('span');
+      labelEl.className = 'text-sm text-text-primary flex-1';
+      labelEl.textContent = group;
 
-    function updateCheckbox() {
-      const isChecked = selectedGroups.includes(group);
-      if (isChecked) {
-        checkbox.classList.remove('border-border', 'bg-surface');
-        checkbox.classList.add('bg-primary', 'border-primary');
-        checkIcon.classList.remove('opacity-0');
+      if (isMandatory) {
+        const mandatoryBadge = document.createElement('span');
+        mandatoryBadge.className = 'text-xs text-text-muted';
+        mandatoryBadge.textContent = group === CUSTOM_GROUP ? 'Your colorways' : 'Required';
+        row.appendChild(checkbox);
+        row.appendChild(labelEl);
+        row.appendChild(mandatoryBadge);
       } else {
-        checkbox.classList.add('border-border', 'bg-surface');
-        checkbox.classList.remove('bg-primary', 'border-primary');
-        checkIcon.classList.add('opacity-0');
+        row.appendChild(checkbox);
+        row.appendChild(labelEl);
       }
-    }
 
-    row.addEventListener('click', () => {
-      if (isMandatory) return;
-      if (selectedGroups.includes(group)) {
-        selectedGroups = selectedGroups.filter(g => g !== group);
-      } else {
-        selectedGroups = [...selectedGroups, group];
+      function updateCheckbox() {
+        const isChecked = selectedGroups.includes(group);
+        if (isChecked) {
+          checkbox.classList.remove('border-border', 'bg-surface');
+          checkbox.classList.add('bg-primary', 'border-primary');
+          checkIcon.classList.remove('opacity-0');
+        } else {
+          checkbox.classList.add('border-border', 'bg-surface');
+          checkbox.classList.remove('bg-primary', 'border-primary');
+          checkIcon.classList.add('opacity-0');
+        }
       }
-      saveGroupSelection(selectedGroups);
-      updateCheckbox();
-      refreshFilteredColorways();
-      renderList();
+
+      row.addEventListener('click', () => {
+        if (isMandatory) return;
+        if (selectedGroups.includes(group)) {
+          selectedGroups = selectedGroups.filter(g => g !== group);
+        } else {
+          selectedGroups = [...selectedGroups, group];
+        }
+        saveGroupSelection(selectedGroups);
+        updateCheckbox();
+        refreshFilteredColorways();
+        renderList();
+      });
+
+      groupCheckboxes.push({ group, updateCheckbox });
+      groupList.appendChild(row);
     });
+  }
 
-    groupCheckboxes.push({ group, updateCheckbox });
-    groupList.appendChild(row);
-  });
+  buildGroupCheckboxes();
 
   // Select All / Deselect All handlers
   selectAllBtn.addEventListener('click', () => {
-    selectedGroups = [...ALL_GROUPS];
+    selectedGroups = getAllGroups();
     saveGroupSelection(selectedGroups);
     groupCheckboxes.forEach(({ updateCheckbox }) => updateCheckbox());
     refreshFilteredColorways();
@@ -397,7 +436,8 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
   });
 
   deselectAllBtn.addEventListener('click', () => {
-    selectedGroups = [MANDATORY_GROUP]; // Keep only mandatory group
+    // Keep only mandatory groups (Mono + Custom if present)
+    selectedGroups = getAllGroups().filter(g => g === MANDATORY_GROUP || g === CUSTOM_GROUP);
     saveGroupSelection(selectedGroups);
     groupCheckboxes.forEach(({ updateCheckbox }) => updateCheckbox());
     refreshFilteredColorways();
@@ -426,10 +466,10 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
   panel.appendChild(list);
   panel.appendChild(modalOverlay);
 
-  // Open modal on group button click
+  // Open modal on group button click — rebuild checkboxes to pick up Custom group
   groupBtn.addEventListener('click', () => {
-    // Refresh checkboxes state
-    groupCheckboxes.forEach(({ group, updateCheckbox }) => updateCheckbox());
+    buildGroupCheckboxes();
+    groupCheckboxes.forEach(({ updateCheckbox }) => updateCheckbox());
     modalOverlay.style.display = 'flex';
   });
 
@@ -478,7 +518,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
     favorites = [];
     saveFavorites(favorites);
     updateFavBtnIcon();
-    if (activeEl && activeIdx >= 0) attachHeartToRow(activeEl, colorwayPresets[activeIdx]);
+    if (activeEl && activeIdx >= 0) attachHeartToRow(activeEl, mergedColorways[activeIdx]);
     renderFavoritesModal();
   });
 
@@ -504,7 +544,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
 
     const resolved = favorites.map(fav => ({
       fav,
-      colorway: colorwayPresets.find(cw => colorwayFingerprint(cw) === fav.fingerprint) ?? null,
+      colorway: mergedColorways.find(cw => colorwayFingerprint(cw) === fav.fingerprint) ?? null,
     }));
 
     // Group resolved colorways by group, unavailable ones at the end
@@ -520,7 +560,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
     let currentFavGroup = null;
 
     available.forEach(({ fav, colorway }) => {
-      const originalIdx = colorwayPresets.indexOf(colorway);
+      const originalIdx = mergedColorways.indexOf(colorway);
 
       if (colorway.group !== currentFavGroup) {
         const groupHeader = document.createElement('p');
@@ -714,7 +754,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
       return;
     }
 
-    const results = colorwayPresets.filter(cw =>
+    const results = mergedColorways.filter(cw =>
       cw.name.toLowerCase().includes(normalizedQuery)
     );
 
@@ -734,7 +774,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
     }
 
     results.forEach((colorway) => {
-      const originalIdx = colorwayPresets.indexOf(colorway);
+      const originalIdx = mergedColorways.indexOf(colorway);
 
       const item = document.createElement('button');
       item.className = colorwayItemClass(false);
@@ -828,7 +868,7 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
 
   function setActive(idx) {
     if (activeEl) {
-      const oldColorway = colorwayPresets[activeIdx];
+      const oldColorway = mergedColorways[activeIdx];
       const wasAlreadyFav = oldColorway && favorites.some(f => f.fingerprint === colorwayFingerprint(oldColorway));
       if (!wasAlreadyFav) detachHeartFromRow(activeEl);
       activeEl.className = colorwayItemClass(false);
@@ -838,10 +878,34 @@ export function buildColorwaysPanel(colorwayPresets, onColorway, { mobile = fals
     activeEl = matching?.el ?? null;
     if (activeEl) {
       activeEl.className = colorwayItemClass(true);
-      attachHeartToRow(activeEl, colorwayPresets[idx]);
+      attachHeartToRow(activeEl, mergedColorways[idx]);
       activeEl.scrollIntoView({ block: 'nearest' });
     }
   }
 
-  return { el: panel, setActive };
+  function refresh() {
+    selectedGroups = getSavedGroupSelection();
+
+    // Remap activeIdx using fingerprint so deletions/additions don't cause stale highlights
+    if (activeIdx >= 0 && mergedColorways[activeIdx]) {
+      const fp = colorwayFingerprint(mergedColorways[activeIdx]);
+      mergedColorways = getMergedColorways();
+      const newIdx = mergedColorways.findIndex(cw => colorwayFingerprint(cw) === fp);
+      if (newIdx === -1) {
+        // Active colorway was deleted — clear highlight and notify caller
+        activeIdx = -1;
+        activeEl = null;
+        onDeleteCustom?.();
+      } else {
+        activeIdx = newIdx;
+      }
+    } else {
+      mergedColorways = getMergedColorways();
+    }
+
+    refreshFilteredColorways();
+    renderList();
+  }
+
+  return { el: panel, setActive, refresh };
 }

@@ -48,8 +48,56 @@ function buildToggleCard(svg, label, ariaLabel, initial, onChange) {
   return btn;
 }
 
-export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground = 'auto', initialCustomImage = null, onDropShadowChange, initialDropShadow = false, onGradientChange, initialGradient = false, onLogoChange, initialLogo = false } = {}) {
+function actionBtnClass(disabled) {
+  return [
+    'flex flex-col items-center justify-center gap-1.5',
+    'aspect-square w-full',
+    'btn-secondary',
+    'text-xs font-medium',
+    disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
+  ].join(' ');
+}
+
+export function buildActionsPanel(onRandom, onSwap, onReset, { onUndo, onRedo, onBackgroundChange, initialBackground = 'auto', initialCustomImage = null, onDropShadowChange, initialDropShadow = false, onGradientChange, initialGradient = false, onLogoChange, initialLogo = false } = {}) {
   const panel = document.createElement('div');
+
+  // ── Undo / Redo row ─────────────────────────────────────────────────────────
+
+  const undoRedoGrid = document.createElement('div');
+  undoRedoGrid.className = 'grid grid-cols-2 gap-2 p-4 pb-2';
+
+  const undoBtn = document.createElement('button');
+  undoBtn.id = 'undo-btn';
+  undoBtn.className = actionBtnClass(true);
+  undoBtn.setAttribute('aria-label', 'Undo last color change');
+  undoBtn.disabled = true;
+  undoBtn.innerHTML = `<i data-lucide="undo-2" class="w-5 h-5 flex-shrink-0"></i><span>Undo</span>`;
+  if (onUndo) undoBtn.addEventListener('click', onUndo);
+
+  const redoBtn = document.createElement('button');
+  redoBtn.id = 'redo-btn';
+  redoBtn.className = actionBtnClass(true);
+  redoBtn.setAttribute('aria-label', 'Redo last color change');
+  redoBtn.disabled = true;
+  redoBtn.innerHTML = `<i data-lucide="redo-2" class="w-5 h-5 flex-shrink-0"></i><span>Redo</span>`;
+  if (onRedo) redoBtn.addEventListener('click', onRedo);
+
+  undoRedoGrid.appendChild(undoBtn);
+  undoRedoGrid.appendChild(redoBtn);
+  panel.appendChild(undoRedoGrid);
+
+  function setUndoEnabled(enabled) {
+    undoBtn.disabled = !enabled;
+    undoBtn.className = actionBtnClass(!enabled);
+  }
+
+  function setRedoEnabled(enabled) {
+    redoBtn.disabled = !enabled;
+    redoBtn.className = actionBtnClass(!enabled);
+  }
+
+  // ── Shuffle / Cycle / Reset grid ────────────────────────────────────────────
+
   panel.appendChild(buildActionGrid([
     {
       id: 'random-btn',
@@ -201,5 +249,5 @@ export function buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChang
   panel.appendChild(effectsHeading);
   panel.appendChild(effectsGrid);
 
-  return panel;
+  return { el: panel, setUndoEnabled, setRedoEnabled };
 }
