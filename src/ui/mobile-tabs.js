@@ -56,7 +56,7 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
   const tabDefs = [
     { id: 'colorways', label: 'Colorways', panel: colorwaysPanel },
     { id: 'manual',    label: 'Manual',    panel: manualPanel },
-    { id: 'actions',   label: 'Actions',   panel: actionsPanel },
+    { id: 'tools',     label: 'Tools',     panel: actionsPanel },
   ];
 
   // Mount all panels absolutely inside panelArea — they fill the area exactly
@@ -90,7 +90,7 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
     return btn;
   });
 
-  let activeTabId = 'actions';
+  let activeTabId = 'tools';
 
   function activateTab(id) {
     activeTabId = id;
@@ -128,7 +128,7 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
   function setRandomEnabled(enabled) {
     // Only override the panel display when 'actions' is the active tab —
     // otherwise the tab system's own display setting stays in charge.
-    if (activeTabId === 'actions') {
+    if (activeTabId === 'tools') {
       actionsPanel.style.display = enabled ? 'block' : 'none';
     }
   }
