@@ -60,23 +60,30 @@ export const ALL_GROUPS = [
 ];
 
 export function getSavedGroupSelection() {
+  const hasCustom = getCustomColorways().length > 0;
   try {
     const saved = localStorage.getItem(GROUP_SELECTION_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
       // Guard against non-array JSON
-      if (!Array.isArray(parsed)) return [...ALL_GROUPS];
+      if (!Array.isArray(parsed)) return getAllGroups();
       // Always ensure Mono is included
       if (!parsed.includes(MANDATORY_GROUP)) {
         parsed.unshift(MANDATORY_GROUP);
+      }
+      // Auto-include Custom group when custom colorways exist
+      if (hasCustom && !parsed.includes(CUSTOM_GROUP)) {
+        parsed.unshift(CUSTOM_GROUP);
       }
       return parsed;
     }
   } catch {
     // Ignore localStorage errors
   }
-  // Default: all groups selected
-  return [...ALL_GROUPS];
+  // Default: show only running/shoe groups + Mono (+ Custom if present)
+  const defaults = ['Kopi', 'ADIZERO', 'Asics *Blast', 'Hoka Clifton', 'Running', MANDATORY_GROUP];
+  if (hasCustom) defaults.unshift(CUSTOM_GROUP);
+  return defaults;
 }
 
 export function saveGroupSelection(selectedGroups) {
@@ -136,6 +143,8 @@ export function exportBtnClass(disabled) {
   ].join(' ');
 }
 
+export const SVG_X = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+
 export function navBtnClass() {
   return [
     'bg-surface-variant border border-border',
@@ -159,4 +168,52 @@ export function colorwayItemClass(active) {
 
 export function swatchColor(hue, sat, luminance) {
   return `hsl(${hue}, ${Math.round(sat * 100)}%, ${Math.round(luminance * 100)}%)`;
+}
+
+// ── Custom colorway storage ───────────────────────────────────────────────────
+
+export const CUSTOM_COLORWAYS_KEY = 'stravachroma-custom-colorways';
+export const CUSTOM_GROUP = 'Custom';
+
+export function getCustomColorways() {
+  try {
+    const saved = localStorage.getItem(CUSTOM_COLORWAYS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+  return [];
+}
+
+export function saveCustomColorways(colorways) {
+  try {
+    localStorage.setItem(CUSTOM_COLORWAYS_KEY, JSON.stringify(colorways));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+export function addCustomColorway(colorway) {
+  const list = getCustomColorways();
+  if (list.length >= 50) return false;
+  list.unshift(colorway); // newest first
+  saveCustomColorways(list);
+  return true;
+}
+
+export function removeCustomColorway(fingerprint) {
+  const list = getCustomColorways().filter(cw => colorwayFingerprint(cw) !== fingerprint);
+  saveCustomColorways(list);
+}
+
+export function getAllGroups() {
+  const hasCustom = getCustomColorways().length > 0;
+  return [
+    ...(hasCustom ? [CUSTOM_GROUP] : []),
+    ...UNIQUE_GROUPS.filter(g => g !== MANDATORY_GROUP),
+    MANDATORY_GROUP,
+  ];
 }

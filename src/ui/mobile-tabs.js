@@ -1,10 +1,10 @@
-import { createIcons, Shuffle, ListRestart, RotateCw, Layers, X, Search } from 'lucide';
+import { createIcons, Shuffle, ListRestart, RotateCw, Layers, X, Search, Undo2, Redo2, BookmarkPlus } from 'lucide';
 import { COLORWAYS } from '../constants.js';
 import { saveBtnClass, tabBtnInactiveClass, tabBtnActiveClass } from './controls-utils.js';
 import { buildActionsPanel } from './actions-panel.js';
 import { buildColorwaysPanel } from './colorway-ui.js';
 
-export function buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo, signal }) {
+export function buildMobileTabs(container, { mapSection, dataSection, labelSection, onRandom, onReset, onSwap, onExport, onColorway, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo, onUndo, onRedo, onSaveCustom, onDeleteCustom, signal }) {
   // Make container a flex column — panels will live in an absolutely-positioned area
   container.style.display = 'flex';
   container.style.flexDirection = 'column';
@@ -39,8 +39,8 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
   panelArea.style.overflow = 'hidden';
 
   // Build panels
-  const actionsPanel = buildActionsPanel(onRandom, onSwap, onReset, { onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo });
-  const { el: colorwaysPanel, setActive: setActiveColorway } = buildColorwaysPanel(COLORWAYS, onColorway, { mobile: true, onSwap, signal });
+  const { el: actionsPanel, setUndoEnabled, setRedoEnabled } = buildActionsPanel(onRandom, onSwap, onReset, { onUndo, onRedo, onBackgroundChange, initialBackground, initialCustomImage, onDropShadowChange, initialDropShadow, onGradientChange, initialGradient, onLogoChange, initialLogo });
+  const { el: colorwaysPanel, setActive: setActiveColorway, refresh: refreshColorways } = buildColorwaysPanel(COLORWAYS, onColorway, { mobile: true, onSwap, signal, onDeleteCustom });
 
   // Manual panel — stacks Label, Data, Map sections vertically with headings intact
   const manualPanel = document.createElement('div');
@@ -48,6 +48,16 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
   [labelSection.el, dataSection.el, mapSection.el].forEach(el => {
     manualPanel.appendChild(el);
   });
+
+  // Save Custom Colorway button
+  const saveCustomBtn = document.createElement('button');
+  saveCustomBtn.className = 'mx-4 mt-2 mb-1 py-3 btn-secondary text-sm font-medium flex items-center justify-center gap-2 cursor-pointer';
+  saveCustomBtn.style.width = 'calc(100% - 2rem)';
+  saveCustomBtn.innerHTML = `<i data-lucide="bookmark-plus" class="w-4 h-4 flex-shrink-0"></i><span>Save as Custom Colorway</span>`;
+  saveCustomBtn.setAttribute('aria-label', 'Save current colors as a custom colorway');
+  saveCustomBtn.addEventListener('click', onSaveCustom ?? (() => {}), signal ? { signal } : undefined);
+  manualPanel.appendChild(saveCustomBtn);
+
   const manualBottomSpacer = document.createElement('div');
   manualBottomSpacer.style.height = '4em';
   manualBottomSpacer.style.flexShrink = '0';
@@ -56,7 +66,7 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
   const tabDefs = [
     { id: 'colorways', label: 'Colorways', panel: colorwaysPanel },
     { id: 'manual',    label: 'Manual',    panel: manualPanel },
-    { id: 'actions',   label: 'Actions',   panel: actionsPanel },
+    { id: 'tools',     label: 'Tools',     panel: actionsPanel },
   ];
 
   // Mount all panels absolutely inside panelArea — they fill the area exactly
@@ -90,7 +100,7 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
     return btn;
   });
 
-  let activeTabId = 'actions';
+  let activeTabId = 'tools';
 
   function activateTab(id) {
     activeTabId = id;
@@ -119,7 +129,7 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
   // Activate default tab
   activateTab('colorways');
 
-  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers, X, Search } });
+  createIcons({ icons: { Shuffle, ListRestart, RotateCw, Layers, X, Search, Undo2, Redo2, BookmarkPlus } });
 
   function setEnabled(enabled) {
     container.style.display = enabled ? 'flex' : 'none';
@@ -128,7 +138,7 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
   function setRandomEnabled(enabled) {
     // Only override the panel display when 'actions' is the active tab —
     // otherwise the tab system's own display setting stays in charge.
-    if (activeTabId === 'actions') {
+    if (activeTabId === 'tools') {
       actionsPanel.style.display = enabled ? 'block' : 'none';
     }
   }
@@ -151,6 +161,9 @@ export function buildMobileTabs(container, { mapSection, dataSection, labelSecti
     setEnabled,
     setRandomEnabled,
     setActiveColorway,
+    setUndoEnabled,
+    setRedoEnabled,
+    refreshColorways,
     setExporting,
     setExportEnabled,
   };

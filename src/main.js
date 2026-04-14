@@ -11,6 +11,9 @@ import { toast } from './ui/toast.js';
 import { hslToRgb } from './worker/utils.js';
 import { initErrorHandling } from './error-boundary.js';
 import { trackColorwaySelected, trackExport } from './analytics.js';
+import { pushColorHistory, canUndo, canRedo, undoColorState, redoColorState, resetColorHistory } from './ui/history.js';
+import { addCustomColorway, getCustomColorways } from './ui/controls-utils.js';
+import { buildSaveCustomModal } from './ui/save-custom-modal.js';
 
 // ── Initialize Global Error Handling ──────────────────────────────────────────
 
@@ -313,6 +316,9 @@ let setRandomEnabled    = () => {};
 let setExporting           = () => {};
 let setExportEnabled       = () => {};
 let setActiveColorway      = () => {};
+let setUndoEnabled         = () => {};
+let setRedoEnabled         = () => {};
+let refreshColorways       = () => {};
 
 let prevHasImage         = false;
 let prevCheckerShow      = false;
@@ -394,6 +400,11 @@ function handleFileLoad(file, pixelData, width, height) {
     isRendering:        false,
   });
 
+  // Reset color history for the new image
+  resetColorHistory();
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
+
   // Update canvas label with sanitized filename for accessibility
   setCanvasLabel(sanitizeFilename(file.name));
 
@@ -406,13 +417,22 @@ function handleFileLoad(file, pixelData, width, height) {
 
 function cap(s) { return s[0].toUpperCase() + s.slice(1); }
 
+let sliderHistoryTimer = null;
+
 function handleSliderChange(layer, field, value) {
   const patch = {};
-  if (field === 'hue')      patch[`${layer}Hue`]      = value;
-  if (field === 'sat')      patch[`${layer}Sat`]      = value;
+  if (field === 'hue')       patch[`${layer}Hue`]       = value;
+  if (field === 'sat')       patch[`${layer}Sat`]       = value;
   if (field === 'luminance') patch[`${layer}Luminance`] = value;
   setState({ ...patch, [`selected${cap(layer)}Preset`]: -1, selectedColorway: -1 });
   requestRender(false);
+
+  // Debounce history push so rapid slider drags create one entry
+  clearTimeout(sliderHistoryTimer);
+  sliderHistoryTimer = setTimeout(() => {
+    pushColorHistory(appState);
+    updateUndoRedoButtons();
+  }, 350);
 }
 
 function handleSwap() {
@@ -424,13 +444,20 @@ function handleSwap() {
     selectedMapPreset: -1, selectedDataPreset: -1, selectedLabelPreset: -1,
     selectedColorway: -1,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
 }
 
 function handleColorway(idx) {
-  const colorway = COLORWAYS[idx];
+  const customs = getCustomColorways();
+  const allColorways = [...customs, ...COLORWAYS];
+  const colorway = allColorways[idx];
   if (!colorway) return;
-  trackColorwaySelected(colorway, idx);
+  // Only track analytics for built-in colorways
+  if (idx >= customs.length) {
+    trackColorwaySelected(colorway, idx - customs.length);
+  }
   setState({
     mapHue:   colorway.map.hue,   mapSat:   colorway.map.sat,   mapLuminance:   colorway.map.luminance,
     dataHue:  colorway.data.hue,  dataSat:  colorway.data.sat,  dataLuminance:  colorway.data.luminance,
@@ -438,6 +465,8 @@ function handleColorway(idx) {
     selectedMapPreset: -1, selectedDataPreset: -1, selectedLabelPreset: -1,
     selectedColorway: idx,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
 }
 
@@ -449,7 +478,10 @@ function handlePresetChange(layer, presetIndex) {
     [`${layer}Sat`]:                  preset.sat,
     [`${layer}Luminance`]:            preset.luminance,
     [`selected${cap(layer)}Preset`]:  presetIndex,
+    selectedColorway: -1,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
 }
 
@@ -648,7 +680,10 @@ function handleReset() {
     labelSat:            PRESETS[DEFAULT_LABEL_PRESET].sat,
     labelLuminance:      PRESETS[DEFAULT_LABEL_PRESET].luminance,
     selectedLabelPreset: DEFAULT_LABEL_PRESET,
+    selectedColorway:    -1,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
 }
 
@@ -661,8 +696,58 @@ function handleRandom() {
     mapHue:   randomHue(), mapSat: 1.0, mapLuminance: 0.5,   selectedMapPreset:   -1,
     dataHue:  randomHue(), dataSat: 1.0, dataLuminance: 0.5,  selectedDataPreset:  -1,
     labelHue: randomHue(), labelSat: 1.0, labelLuminance: 0.5, selectedLabelPreset: -1,
+    selectedColorway: -1,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
+}
+
+// ── Undo / Redo ───────────────────────────────────────────────────────────────
+
+function updateUndoRedoButtons() {
+  setUndoEnabled(canUndo());
+  setRedoEnabled(canRedo());
+}
+
+function handleUndo() {
+  const snap = undoColorState();
+  if (!snap) return;
+  setState(snap);
+  requestRender(false);
+  updateUndoRedoButtons();
+}
+
+function handleRedo() {
+  const snap = redoColorState();
+  if (!snap) return;
+  setState(snap);
+  requestRender(false);
+  updateUndoRedoButtons();
+}
+
+// ── Save Custom Colorway ──────────────────────────────────────────────────────
+
+function handleSaveCustom() {
+  const {
+    mapHue, mapSat, mapLuminance,
+    dataHue, dataSat, dataLuminance,
+    labelHue, labelSat, labelLuminance,
+  } = appState;
+
+  const overlay = buildSaveCustomModal(
+    { mapHue, mapSat, mapLuminance, dataHue, dataSat, dataLuminance, labelHue, labelSat, labelLuminance },
+    (name, colorway) => {
+      const success = addCustomColorway(colorway);
+      if (!success) {
+        toast.error('Maximum 50 custom colorways reached.');
+        return;
+      }
+      refreshColorways();
+      toast.success(`Saved \u201c${name}\u201d`);
+    }
+  );
+  document.body.appendChild(overlay);
 }
 
 // ── Views ─────────────────────────────────────────────────────────────────────
@@ -671,7 +756,8 @@ function setupLanding() {
   currentView = 'landing';
   layout = null;
   updateMapControls = updateDataControls = updateLabelControls = () => {};
-  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = () => {};
+  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = setUndoEnabled = setRedoEnabled = () => {};
+  refreshColorways = () => {};
 
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -754,10 +840,18 @@ function setupEditor() {
       onGradientChange: handleGradientChange,
       initialGradient: appState.gradientEnabled,
       initialLogo: appState.showLogo,
+      onUndo: handleUndo,
+      onRedo: handleRedo,
+      onSaveCustom: handleSaveCustom,
+      onDeleteCustom: () => setState({ selectedColorway: -1 }),
       signal }
   );
   ({ updateMapControls, updateDataControls, updateLabelControls,
-     setEnabled: setControlsEnabled, setRandomEnabled, setActiveColorway } = controlsResult);
+     setEnabled: setControlsEnabled, setRandomEnabled, setActiveColorway,
+     setUndoEnabled, setRedoEnabled, refreshColorways } = controlsResult);
+
+  // Sync undo/redo button state with current history
+  updateUndoRedoButtons();
 
   if (layout.actions) {
     ({ setExporting, setExportEnabled } = buildActions(layout.actions, { onExport: handleExport, onCancelExport: handleCancelExport, signal }));
@@ -783,7 +877,8 @@ function setupDocs() {
   currentView = 'docs';
   layout = null;
   updateMapControls = updateDataControls = updateLabelControls = () => {};
-  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = () => {};
+  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = setUndoEnabled = setRedoEnabled = () => {};
+  refreshColorways = () => {};
 
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -797,7 +892,8 @@ function setup404() {
   currentView = '404';
   layout = null;
   updateMapControls = updateDataControls = updateLabelControls = () => {};
-  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = () => {};
+  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = setUndoEnabled = setRedoEnabled = () => {};
+  refreshColorways = () => {};
 
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -945,6 +1041,9 @@ function hasUnsavedChanges() {
         isClassifying:      true,
         isRendering:        false,
       });
+      // Start fresh history for the restored session
+      resetColorHistory();
+      pushColorHistory(appState);
       requestClassification(saved.pixelData, saved.width, saved.height);
     } else {
       // No saved image — fall back to landing.
