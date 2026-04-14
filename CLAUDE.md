@@ -58,9 +58,15 @@ Pixels are classified in two passes:
 |---|---|
 | `ui/layout.js` | Builds the top-level DOM scaffold; returns refs to `canvasPane`, `controlsContainer`, `actions`. Adapts between desktop (sidebar) and mobile (tab panels) at the 800 px breakpoint. |
 | `ui/canvas.js` | Manages the `<canvas>`, pan/zoom (wheel, pinch, double-click-to-fit), checkerboard background, classify overlay, and render spinner. |
-| `ui/controls.js` | HSL sliders per layer, preset dropdowns, colorways carousel, background picker. Returns updater functions (`updateMapControls`, etc.) used by the state subscriber in `main.js`. |
-| `ui/upload.js` | Drop zone, file validation, `createImageBitmap` decode, drag highlighting. |
+| `ui/controls.js` | Controls composer — routes between desktop sidebar and mobile tabs (`mobile-tabs.js`). Returns updater functions used by the state subscriber in `main.js`. |
+| `ui/slider-controls.js` | HSL sliders and preset dropdowns for each layer (Map, Data, Label). |
+| `ui/colorway-ui.js` | Colorways carousel, search (Cmd/Ctrl+K), favorites, group filtering, and custom colorway management. |
+| `ui/actions-panel.js` | Shuffle, cycle, reset, undo/redo, background picker (dark/light/auto/image), and experimental effects (drop shadow, gradient, export logo). |
+| `ui/export-controls.js` | Desktop export button (`Save Image`). |
+| `ui/mobile-tabs.js` | Mobile tab bar (Colorways / Manual / Tools) and panel switching. |
+| `ui/upload.js` | Drop zone, file validation, `createImageBitmap` decode, drag highlighting, simple mode toggle. |
 | `ui/toast.js` | Auto-dismiss toasts, max 3 visible at once. |
+| `ui/history.js` | Undo/redo stack for color state changes. |
 
 ### Session persistence
 

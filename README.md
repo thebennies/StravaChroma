@@ -18,9 +18,11 @@ Personalize your run. Turn boring Strava share images into vibrant artworks — 
 
 - **Pixel classification** — automatically separates map, data, and label pixels using connected-component analysis and Otsu thresholding
 - **Independent layer controls** — tune hue and saturation for the map, data, and label layers separately with HSL sliders
-- **Hundreds of colorways** — curated palettes grouped by running brands, sports teams, sneakers, luxury brands, IDE themes, films, comics, and more; plus single-layer presets
+- **500+ colorways** — curated palettes grouped by running brands, sports teams, sneakers, luxury brands, IDE themes, films, comics, and more; plus single-layer presets
 - **Colorway search** — Cmd/Ctrl+K to find palettes fast; group filter modal to curate the list
 - **Colorway favorites** — heart your go-to palettes for quick access
+- **Undo / Redo** — step back and forward through color changes
+- **Custom colorways** — save your own palettes to local storage
 - **Experimental effects** — drop shadow, tilted gradient overlay, and optional export logo stamp
 - **Live preview** — downscaled real-time preview while adjusting; full-resolution on export
 - **Off-thread processing** — classification and rendering run in a Web Worker to keep the UI responsive
@@ -47,7 +49,7 @@ Requires `createImageBitmap`, Web Workers, `OffscreenCanvas`, and ES2020 modules
 ## Tech stack
 
 - Vanilla JS (ES modules) — no framework, no TypeScript
-- [Vite 6](https://vitejs.dev/) — bundler and dev server
+- [Vite 8](https://vitejs.dev/) — bundler and dev server
 - [Tailwind CSS v4](https://tailwindcss.com/) — styling
 - [Lucide](https://lucide.dev/) — icons
 - Web Workers + OffscreenCanvas — off-thread pixel processing

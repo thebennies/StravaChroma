@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [1.1.0] — 2026-04-10
+## [2026.04.1] — 2026-04-10
 
 ### Added
 - Client-side routing (`/` landing, `/editor` app, `/docs` help, `/404` fallback) with history API
@@ -53,7 +53,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [1.0.0] — 2026-03-19
+## [2026.04.0] — 2026-03-19
 
 ### Added
 - Initial release

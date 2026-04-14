@@ -54,19 +54,34 @@ src/
   export.js               # PNG download helper
   error-boundary.js       # Global error handling
   analytics.js            # PostHog event tracking
+  version.js              # Build-time version injection
   styles.css              # Tailwind + custom design tokens
   worker/
     processor.worker.js   # Web Worker: pixel classification & rendering
+    classification.js     # Pixel classification algorithms
+    rendering.js          # Render pipeline
+    gradient.js           # Gradient overlay effects
+    union-find.js         # Union-Find data structure for connected components
+    message-validation.js # Worker message validation
     utils.js              # Pure utility functions (HSL, Otsu, etc.)
     utils.test.js         # Unit tests for utils
   ui/
     layout.js             # DOM scaffold (desktop sidebar / mobile tabs)
     canvas.js             # Canvas element + pan/zoom interactions
-    controls.js           # HSL sliders, presets, colorways carousel
+    controls.js           # Controls composer (desktop / mobile routing)
+    slider-controls.js    # HSL sliders and preset dropdowns per layer
+    colorway-ui.js        # Colorways carousel, search, favorites, groups
+    actions-panel.js      # Shuffle, cycle, reset, undo/redo, background, effects
+    export-controls.js    # Desktop export button
+    mobile-tabs.js        # Mobile tab bar and panel switching
     upload.js             # Drop zone, file validation
     docs.js               # Documentation page
     toast.js              # Toast notifications
     modal.js              # Image lightbox
+    modal-manager.js      # Modal stacking manager
+    save-custom-modal.js  # Save custom colorway modal
+    controls-utils.js     # Shared UI constants and class helpers
+    history.js            # Undo/redo color state history
 ```
 
 ### Linting Rules (ESLint)
@@ -290,7 +305,7 @@ describe('hslToRgb', () => {
 ```json
 "dependencies": {
   "@fontsource-variable/inter": "^5.2.8",
-  "lucide": "^1.7.0",
+  "lucide": "^1.8.0",
   "posthog-js": "^1.367.0"
 }
 ```
@@ -384,4 +399,4 @@ pnpm build        # verify build succeeds
 
 ---
 
-*Last updated: Generated for StravaChroma v1.0.0*
+*Last updated: Generated for StravaChroma 2026.04.1*
