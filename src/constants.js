@@ -72,6 +72,15 @@ export const DEFAULT_DATA_PRESET  = PRESETS.findIndex(p => p.name === 'White');
 export const DEFAULT_LABEL_PRESET = PRESETS.findIndex(p => p.name === 'White');
 
 export const COLORWAYS = [
+  // ── Auto-generated from single-layer color presets (same color on all layers)
+  ...PRESETS.map(p => ({
+    name:  p.name,
+    group: 'Mono',
+    map:   { hue: p.hue, sat: p.sat, luminance: p.luminance },
+    data:  { hue: p.hue, sat: p.sat, luminance: p.luminance },
+    label: { hue: p.hue, sat: p.sat, luminance: p.luminance },
+  })),
+  // ── Themed colorways ───────────────────────────────────────────────────
   {
     name:  "Brooks Coral & Black",
     group: 'Running',
