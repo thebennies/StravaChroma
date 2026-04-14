@@ -64,7 +64,7 @@ export function buildActionsPanel(onRandom, onSwap, onReset, { onUndo, onRedo, o
   // ── Undo / Redo row ─────────────────────────────────────────────────────────
 
   const undoRedoGrid = document.createElement('div');
-  undoRedoGrid.className = 'grid grid-cols-2 gap-2 p-4 pb-2';
+  undoRedoGrid.className = 'grid grid-cols-4 gap-2 p-4 pb-2';
 
   const undoBtn = document.createElement('button');
   undoBtn.id = 'undo-btn';
