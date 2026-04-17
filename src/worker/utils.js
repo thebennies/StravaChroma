@@ -85,17 +85,6 @@ export function saturation(r, g, b) {
   return l > 0.5 ? d / (2 - max - min) : d / (max + min);
 }
 
-/**
- * Blends a lightness value toward 0.5 based on saturation.
- * Used to prevent fully-saturated colours from becoming too dark or bright.
- * @param {number} l    Lightness  0–1
- * @param {number} sat  Saturation 0–1
- * @returns {number} Blended lightness 0–1
- */
-export function blendLightness(l, sat) {
-  return l * (1 - sat) + 0.5 * sat;
-}
-
 // ── Otsu's method ────────────────────────────────────────────────────────────
 
 /**

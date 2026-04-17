@@ -9,7 +9,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [1.1.0] — 2026-04-10
+## [2026.04.2] — 2026-04-18
+
+### Added
+- **Undo / Redo** — step back and forward through color history (`ui/history.js`)
+- **Custom colorways** — save your own palettes to local storage; manage via save modal
+- **Adidas ADIZERO group** — 14 colorways for Adizero racing shoes
+- **Asics \*Blast group** — 21 colorways (Novablast 5 & Superblast variants)
+- **Hoka Clifton group** — 18 colorways (Clifton 10 and prior variants)
+- **Gradient & export logo effects** — new experimental toggles in the Tools panel
+- **Preset modal selector** — replaces dropdown for choosing layer color presets
+- **Centralized modal manager** (`ui/modal.js`) — keyboard focus trapping and `Escape` dismissal across all modals
+- Export cancellation via `AbortController`
+- IndexedDB TTL cleanup for stale sessions
+- Netlify deployment config (`netlify.toml`)
+
+### Changed
+- Running shoe brands (Adidas, Asics, Hoka) moved from Running group to dedicated brand groups
+- Mobile Actions tab renamed to **Tools**
+- Mobile controls panel height increased to 50 vh for more comfortable use
+- Colorway group defaults updated to show Running and Sneakers groups by default
+- Undo/redo and custom colorways wired into both desktop sidebar and mobile panels
+
+### Fixed
+- Custom color (`-1`) preset index now handled correctly in slider controls
+- Gradient and logo init calls moved out of drop shadow toggle handler
+- `keydown` listener on modal manager properly removed on close
+- Nearby connected components merged to prevent punctuation misclassification
+
+### Refactored
+- `controls.js` 2035-line monolith split into focused modules (`slider-controls.js`, `colorway-ui.js`, `actions-panel.js`, `mobile-tabs.js`, `export-controls.js`)
+- `processor.worker.js` split into focused worker modules
+- Shared SVG icon helper extracted to `controls-utils.js`
+
+---
+
+## [2026.04.1] — 2026-04-10
 
 ### Added
 - Client-side routing (`/` landing, `/editor` app, `/docs` help, `/404` fallback) with history API
@@ -53,7 +88,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [1.0.0] — 2026-03-19
+## [2026.04.0] — 2026-03-19
 
 ### Added
 - Initial release

@@ -33,8 +33,8 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
     'text-xs text-text-muted hover:text-text-primary hover:border-primary',
     'transition-all duration-150 cursor-pointer',
   ].join(' ');
-  toggleBtn.textContent = isSimpleMode ? 'Show Gibberish' : 'Hide Gibberish';
-  toggleBtn.setAttribute('aria-label', isSimpleMode ? 'Show Gibberish' : 'Hide Gibberish');
+  toggleBtn.textContent = isSimpleMode ? 'Full View' : 'Simple View';
+  toggleBtn.setAttribute('aria-label', isSimpleMode ? 'Show full landing page view' : 'Show simplified landing page view');
   canvasPane.appendChild(toggleBtn);
 
   // App title
@@ -60,14 +60,16 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   title.appendChild(titleSub);
   titleSub.style.display = isSimpleMode ? 'none' : '';
 
-  // Upload card
-  const inner = document.createElement('div');
+  // Upload card - use a button for keyboard accessibility
+  const inner = document.createElement('button');
   inner.className = [
     'bg-surface border-2 border-solid border-border rounded-2xl',
     'px-12 py-10 md:px-16 md:py-12 text-center',
     'transition-all duration-200 ease-out',
     'hover:border-text-secondary hover:bg-surface/80',
+    'cursor-pointer',
   ].join(' ');
+  inner.setAttribute('aria-label', 'Upload image - click to browse or drag and drop a PNG file');
 
   function updateUploadIcon() {
     uploadIcon.className = `mx-auto mb-4 w-14 h-14 rounded-full flex items-center justify-center ${isSimpleMode ? '' : 'bg-surface-variant'}`;
@@ -102,27 +104,28 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   sampleGrid.className = 'grid grid-cols-4 gap-4 md:gap-6';
 
   const sampleImages = [
-    { src: 'features-01-original.png', label: 'Original' },
-    { src: 'features-02-colorways.png', label: 'Colorways' },
-    { src: 'features-03-customize.png', label: 'Customize' },
-    { src: 'features-04-apply.jpg', label: 'Apply' },
+    { src: 'features-01-original.png', label: 'Original', alt: 'Strava screenshot with the default orange map route on a dark background' },
+    { src: 'features-02-colorways.png', label: 'Colorways', alt: 'Strava screenshot showing various color theme options applied to the map' },
+    { src: 'features-03-customize.png', label: 'Customize', alt: 'Strava screenshot demonstrating hue, saturation, and luminance customization controls' },
+    { src: 'features-04-apply.jpg', label: 'Apply', alt: 'Strava screenshot showing the final recolored result ready to save' },
   ];
 
-  sampleImages.forEach(({ src, label }) => {
+  sampleImages.forEach(({ src, label, alt }) => {
     const col = document.createElement('div');
     col.className = 'flex flex-col items-center gap-3';
 
-    const imgWrap = document.createElement('div');
+    const imgWrap = document.createElement('button');
     imgWrap.className = 'w-full aspect-[517/980] rounded-lg overflow-hidden bg-surface border border-border cursor-pointer hover:border-primary transition-colors duration-200';
+    imgWrap.setAttribute('aria-label', `View larger image: ${alt}`);
 
     const img = document.createElement('img');
     const imgSrc = import.meta.env.BASE_URL + src;
     img.src = imgSrc;
-    img.alt = label;
-    img.className = 'w-full h-full object-cover';
+    img.alt = alt;
+    img.className = 'w-full h-full object-cover pointer-events-none';
 
     imgWrap.addEventListener('click', () => {
-      openModal(imgSrc, label);
+      openModal(imgSrc, alt, imgWrap);
     });
 
     imgWrap.appendChild(img);
@@ -204,11 +207,11 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
     iconWrap.innerHTML = icon;
 
     const colTitle = document.createElement('p');
-    colTitle.className = 'text-xs sm:text-sm font-bold text-text-primary leading-snug';
+    colTitle.className = 'text-sm font-bold text-text-primary leading-snug';
     colTitle.textContent = title;
 
     const colDesc = document.createElement('p');
-    colDesc.className = 'text-[11px] sm:text-xs text-text-secondary leading-relaxed';
+    colDesc.className = 'text-xs text-text-secondary leading-relaxed';
     colDesc.textContent = desc;
 
     col.appendChild(iconWrap);
@@ -225,7 +228,7 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   orDivider.className = 'flex items-center gap-4 w-full max-w-xs';
   orDivider.innerHTML = [
     '<div class="flex-1 h-px bg-border"></div>',
-    '<span class="text-xs font-medium text-text-muted tracking-widest">OR</span>',
+    '<span class="text-sm font-medium text-text-secondary tracking-widest">OR</span>',
     '<div class="flex-1 h-px bg-border"></div>',
   ].join('');
   dropZone.appendChild(orDivider);
@@ -303,7 +306,12 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
     { label: 'Log',    href: 'https://github.com/thebennies/StravaChroma/commits/main/',       icon: `<i data-lucide="scroll-text" class="w-3 h-3 flex-shrink-0"></i>` },
   ].forEach(({ label, href, icon, onClick }, i, arr) => {
     const a = document.createElement(href ? 'a' : 'button');
-    if (href) a.href = href;
+    if (href) {
+      a.href = href;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.setAttribute('aria-label', `${label} (opens in new tab)`);
+    }
     a.className = 'flex items-center gap-1 text-xs text-text-muted hover:text-text-secondary transition-colors cursor-pointer bg-transparent border-0 p-0';
     a.innerHTML = `${icon}${label}`;
     if (onClick) a.addEventListener('click', onClick);
@@ -318,7 +326,7 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
 
   const copyright = document.createElement('p');
   copyright.className = 'text-xs text-text-muted';
-  copyright.textContent = 'Copyright adalah Hak Cipta';
+  copyright.textContent = '© 2026 StravaChroma';
 
   const versionBadge = document.createElement('p');
   versionBadge.className = 'text-xs text-text-muted';
@@ -348,8 +356,8 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
       localStorage.setItem(SIMPLE_MODE_KEY, String(isSimpleMode));
     } catch { /* ignore */ }
 
-    toggleBtn.textContent = isSimpleMode ? 'Show Gibberish' : 'Hide Gibberish';
-    toggleBtn.setAttribute('aria-label', isSimpleMode ? 'Show Gibberish' : 'Hide Gibberish');
+    toggleBtn.textContent = isSimpleMode ? 'Full View' : 'Simple View';
+    toggleBtn.setAttribute('aria-label', isSimpleMode ? 'Show full landing page view' : 'Show simplified landing page view');
 
     titleMain.style.display = isSimpleMode ? 'none' : '';
     titleSub.style.display = isSimpleMode ? 'none' : '';
@@ -367,20 +375,11 @@ export function buildUploadPrompt(canvasPane, { onDocs } = {}) {
   return { dropZone, inner, fileInput, demoBtn };
 }
 
-export function hideUploadPrompt(dropZone) {
-  dropZone.style.display = 'none';
-}
-
-export function showUploadPrompt(dropZone) {
-  dropZone.style.display = '';
-}
-
 /**
  * File size and memory limits
  */
 const MEMORY_LIMITS = {
-  WARNING_MB: 20,
-  HARD_LIMIT_MB: 100,
+  HARD_LIMIT_MB: 1,
   MAX_PIXELS: 50 * 1000000, // 50 megapixels
   WARNING_PIXELS: 20 * 1000000 // 20 megapixels
 };
@@ -398,11 +397,6 @@ export async function processFile(file, onSuccess) {
   if (file.size > MEMORY_LIMITS.HARD_LIMIT_MB * 1024 * 1024) {
     toast.error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Please use an image under ${MEMORY_LIMITS.HARD_LIMIT_MB} MB.`);
     return;
-  }
-
-  const fileMB = file.size / (1024 * 1024);
-  if (fileMB > MEMORY_LIMITS.WARNING_MB) {
-    toast.warning('Large file — processing may take a while...');
   }
 
   let dimensions;
@@ -429,7 +423,7 @@ export async function processFile(file, onSuccess) {
   }
 
   // Check memory constraints
-  const memoryCheck = checkMemoryConstraints(fileMB, width, height);
+  const memoryCheck = checkMemoryConstraints(width, height);
   if (!memoryCheck.allowed) {
     toast.error(memoryCheck.error);
     return;

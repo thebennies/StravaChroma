@@ -39,6 +39,10 @@ export const appState = {
 
   // Effects
   dropShadowEnabled:    false,     // true | false
+  gradientEnabled:      false,     // true | false - experimental tilted gradient
+
+  // Logo overlay
+  showLogo:             false,     // true | false - show StravaChroma logo on export
 };
 
 const listeners = [];
@@ -48,6 +52,19 @@ export function setState(patch) {
   for (const fn of listeners) fn(appState);
 }
 
+/**
+ * Subscribe to state changes
+ * @param {Function} fn - Callback function to call when state changes
+ * @returns {Function} Unsubscribe function to remove the listener
+ */
 export function subscribe(fn) {
   listeners.push(fn);
+  
+  // Return unsubscribe function
+  return function unsubscribe() {
+    const index = listeners.indexOf(fn);
+    if (index !== -1) {
+      listeners.splice(index, 1);
+    }
+  };
 }

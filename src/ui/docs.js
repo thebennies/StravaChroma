@@ -13,18 +13,26 @@ const ICONS = {
 
 // Display metadata for each colorway group — update descriptions when adding new groups
 const GROUP_META = {
-  Mono:       { label: 'Mono',               description: 'Single-color tints applied uniformly across all layers' },
-  Running:    { label: 'Running',             description: 'Running shoe brand palettes (Adidas, Asics, Brooks, Hoka, NB, Nike, ON, Puma, Salomon, Saucony)' },
-  Sneakers:   { label: 'Sneakers',            description: 'Iconic sneaker colorways and silhouette-inspired palettes' },
-  Kopi:       { label: 'Kopi',               description: 'Southeast Asian kopi shop and coffee brand-inspired palettes' },
-  Brand:      { label: 'Brand',              description: 'Popular brand identity and logo colors' },
-  Luxury:     { label: 'Luxury',             description: 'Premium and luxury fashion house palettes' },
-  EPL:        { label: 'EPL',               description: 'English Premier League club colors' },
-  NBA:        { label: 'NBA',               description: 'NBA team colors' },
-  Comics:     { label: 'Comics',             description: 'Comic book and graphic novel-inspired colorways' },
-  TMNT:       { label: 'TMNT',              description: 'Teenage Mutant Ninja Turtles character palettes' },
-  MechKeeb:   { label: 'Mechanical Keyboards', description: 'Popular mechanical keyboard keycap colorway designs' },
-  IDE:        { label: 'IDE Themes',         description: 'Code editor and IDE theme-inspired palettes' },
+  Mono:           { label: 'Mono',                  description: 'Single-color tints applied uniformly across all layers' },
+  Running:        { label: 'Running',               description: 'Running shoe brand palettes (Adidas, Asics, Brooks, Hoka, NB, Nike, ON, Puma, Salomon, Saucony)' },
+  Kopi:           { label: 'Kopi',                  description: 'Southeast Asian kopi shop and coffee brand-inspired palettes' },
+  Sneakers:       { label: 'Sneakers',              description: 'Iconic sneaker colorways (Jordan, Nike, Yeezy, Adidas, New Balance, Converse, Puma)' },
+  Luxury:         { label: 'Luxury',                description: 'Premium and luxury fashion house palettes (Hermès, Tiffany, Gucci, Chanel, LV, etc.)' },
+  Brand:          { label: 'Brand',                 description: 'Popular brand identity and logo colors (Apple, Google, Netflix, Spotify, Nike, Ferrari, etc.)' },
+  EPL:            { label: 'EPL',                   description: 'English Premier League club colors (Arsenal, Liverpool, Man City, Man Utd, etc.)' },
+  ISL:            { label: 'ISL',                   description: 'Liga Super Indonesia football team colors (Persib, Persija, Persebaya, etc.)' },
+  NBA:            { label: 'NBA',                   description: 'NBA team colors (Lakers, Warriors, Bulls, Celtics, etc.)' },
+  Movies:         { label: 'Movies',                description: 'Iconic film color palettes (The Godfather, The Matrix, Dune, Barbie, etc.)' },
+  Comics:         { label: 'Comics',                description: 'Comic book hero and villain palettes (Batman, Spider-Man, Hulk, Joker, etc.)' },
+  'Star Wars':         { label: 'Star Wars',             description: 'Galaxy-wide factions and character palettes (Jedi, Sith, Mandalorians, Darth Vader, etc.)' },
+  TMNT:                { label: 'TMNT',                  description: 'Teenage Mutant Ninja Turtles character palettes' },
+  Retro:               { label: 'Retro',                 description: 'Vintage aesthetic palettes (70s-90s styles, synthwave, vaporwave, Memphis design)' },
+  Cyberpunk:           { label: 'Cyberpunk',             description: 'Neon-drenched futuristic palettes for that blade-runner aesthetic' },
+  'Mechanical Keyboards': { label: 'Mechanical Keyboards', description: 'Popular mechanical keyboard keycap colorway designs (GMK, ePBT, etc.)' },
+  'IDE Themes':        { label: 'IDE Themes',            description: 'Code editor and IDE theme-inspired palettes (Monokai, Dracula, Nord, Catppuccin, etc.)' },
+  ADIZERO:        { label: 'ADIZERO',               description: 'Adidas ADIZERO running shoe colorways' },
+  'Asics *Blast': { label: 'Asics *Blast',          description: 'Asics running shoe *Blast collection palettes' },
+  'Hoka Clifton': { label: 'Hoka Clifton',          description: 'Hoka Clifton running shoe colorways' },
 };
 
 const colorwayCount = COLORWAYS.length;
@@ -80,10 +88,14 @@ export function buildDocsPage({ onClose } = {}) {
   const title = document.createElement('h1');
   title.className = 'text-3xl font-bold mb-2';
   title.innerHTML = 'Strava<span class="text-gradient">Chroma</span> Docs';
+  const versionDisplay = document.createElement('p');
+  versionDisplay.className = 'text-base font-bold text-white mt-4';
+  versionDisplay.textContent = `v${APP_VERSION}`;
   const subtitle = document.createElement('p');
-  subtitle.className = 'text-text-secondary';
+  subtitle.className = 'text-text-secondary mt-2';
   subtitle.textContent = 'Documentation and help center';
   header.appendChild(title);
+  header.appendChild(versionDisplay);
   header.appendChild(subtitle);
   content.appendChild(header);
 
@@ -127,9 +139,8 @@ export function buildDocsPage({ onClose } = {}) {
       Upload a PNG of your Strava activity share image. StravaChroma analyzes it locally in your browser, detects three color layers, and lets you restyle them however you like. Hit the demo button on the home page to try it without your own image.
     `),
     buildSubsection('Uploading an Image', `
-      Drag and drop a PNG onto the canvas, or click to browse. Files up to 100 MB and 50 megapixels are supported. Larger files may take a moment to process. Your image is never sent to a server.
+      Drag and drop a PNG onto the canvas, or click to browse. Files up to 1 MB are supported. Your image is never sent to a server.
     `),
-    buildSubsection('Colorways', buildColorwaysHelpBlurb()),
     buildSubsection('Manual Adjustments', `
       The Manual tab (or sidebar on desktop) gives you HSL sliders for each layer:
       • Map – the route line and map background
@@ -146,6 +157,12 @@ export function buildDocsPage({ onClose } = {}) {
       • Light – solid white
       • Image – upload your own background (tap the clear button to remove it)
     `),
+    buildSubsection('Experimental Effects', `
+      The Actions panel (or sidebar on desktop) has three toggleable effects under "Experimental":
+      • Drop Shadow – adds a soft shadow behind the image layers
+      • Gradient – overlays a tilted light-to-dark gradient for a 3D feel
+      • Export Logo – stamps the StravaChroma logo onto the saved image
+    `),
     buildSubsection('Saving Your Image', `
       Tap "Save" (mobile) or "Save Image" (desktop) to download a full-resolution PNG. On supported mobile browsers the system share sheet will open instead, letting you send or save directly from there.
     `),
@@ -160,7 +177,7 @@ export function buildDocsPage({ onClose } = {}) {
       The canvas preview renders at 50% resolution for performance. The exported file is always at full resolution — use Save Image to get the full-quality version.
     `),
     buildSubsection('Export fails or times out', `
-      Very large images (20+ megapixels) can take several seconds to export. If it fails, the app will retry automatically up to twice. If it keeps failing, try refreshing the page — your session is saved and will be restored.
+      Export renders at full resolution in a background worker — this usually completes in under a second. If it fails, the app retries automatically up to twice. If it keeps failing, try refreshing the page — your session is saved and will be restored.
     `),
     buildSubsection('App crashed or the image disappeared', `
       The image processing runs in a background Web Worker. If the worker crashes, the app restarts it automatically. Your source image is saved in IndexedDB, so refreshing the page will restore your session.
@@ -176,14 +193,23 @@ export function buildDocsPage({ onClose } = {}) {
   // Changelog Section
   content.appendChild(buildSection('Changelog', 'changelog', ICONS.changelog, [
     buildSubsection(`v${APP_VERSION}`, `
+      • Undo / Redo — step back and forward through color history
+      • Custom colorways — save and reuse your own palettes
+      • New brand groups: Adidas ADIZERO (14), Asics *Blast (21), Hoka Clifton (18)
+      • Preset modal selector replaces dropdown
+      • Gradient and export logo experimental effects
+      • Mobile Tools panel (renamed from Actions); taller controls panel
+    `),
+    buildSubsection('v2026.04.1', `
       • CalVer versioning — dates instead of arbitrary numbers
       • Colorway search — Cmd/Ctrl+K to find palettes fast
       • Colorway favorites — heart your go-to palettes
-      • Drop shadow effect — polish your exports
+      • Drop shadow, gradient, and export logo effects
       • Group selection modal — curate your sidebar
       • New colorways — Kopi (coffee) & Comics/TMNT themes
       • Pink primary palette — fresh coat of paint
       • Mobile tab reorder — Colorways now default on small screens
+      • File upload limit tightened to 1 MB
     `),
     buildSubsection('v2026.04.0', `
       Initial release of StravaChroma.
@@ -210,15 +236,6 @@ export function buildDocsPage({ onClose } = {}) {
     buildSubsection('Open Source', buildOpenSourceLinks()),
     buildSubsection('Maker', buildDeveloperCard()),
   ]));
-
-  // Docs footer with version
-  const docsFooter = document.createElement('footer');
-  docsFooter.className = 'max-w-2xl mx-auto px-6 pb-12 text-center';
-  const versionLine = document.createElement('p');
-  versionLine.className = 'text-xs text-text-muted';
-  versionLine.textContent = `v${APP_VERSION}`;
-  docsFooter.appendChild(versionLine);
-  content.appendChild(docsFooter);
 
   container.appendChild(content);
 

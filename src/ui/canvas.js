@@ -15,8 +15,6 @@ let lastPanY = 0;
 
 // Touch state
 let lastTouchDist = 0;
-let lastTouchMidX = 0;
-let lastTouchMidY = 0;
 let touchPaneRect = null; // cached at pinch-start, avoids forced layout in touchmove
 
 // window-level handlers stored so they can be removed before re-registering on layout rebuild
@@ -38,6 +36,8 @@ export function buildCanvas(pane) {
   canvas.id = 'preview-canvas';
   canvas.className = 'absolute z-10';
   canvas.style.cssText = 'top:0;left:0;image-rendering:pixelated;transform-origin:0 0;';
+  canvas.setAttribute('role', 'img');
+  canvas.setAttribute('aria-label', 'Recolored Strava map preview');
   canvasPane.appendChild(canvas);
   ctx = canvas.getContext('2d');
 
@@ -51,6 +51,9 @@ export function buildCanvas(pane) {
     'hidden',
   ].join(' ');
   renderSpinner.innerHTML = '<span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span> Updating';
+  renderSpinner.setAttribute('role', 'status');
+  renderSpinner.setAttribute('aria-live', 'polite');
+  renderSpinner.setAttribute('aria-atomic', 'true');
   canvasPane.appendChild(renderSpinner);
 
   classifyOverlay = document.createElement('div');
@@ -60,6 +63,8 @@ export function buildCanvas(pane) {
     'bg-bg/80 backdrop-blur-sm',
     'hidden',
   ].join(' ');
+  classifyOverlay.setAttribute('role', 'status');
+  classifyOverlay.setAttribute('aria-live', 'polite');
 
   // Skeleton route lines — pulse while classifying
   const skeleton = document.createElement('div');
@@ -151,6 +156,15 @@ export function setCanvasBackground(type, imageUrl) {
   // 'auto': all inline styles cleared → CSS class bg-bg (#0D0D0D) takes over
 }
 
+/**
+ * Update the canvas aria-label with the filename for better context
+ */
+export function setCanvasLabel(filename) {
+  if (canvas) {
+    canvas.setAttribute('aria-label', filename ? `Recolored map: ${filename}` : 'Recolored Strava map preview');
+  }
+}
+
 export function setClassifyOverlay(visible) {
   if (classifyOverlay) classifyOverlay.classList.toggle('hidden', !visible);
 }
@@ -237,8 +251,6 @@ function setupMobileInteractions(canvas) {
         touches[0].clientX - touches[1].clientX,
         touches[0].clientY - touches[1].clientY
       );
-      lastTouchMidX = (touches[0].clientX + touches[1].clientX) / 2;
-      lastTouchMidY = (touches[0].clientY + touches[1].clientY) / 2;
       // Cache pane rect once per pinch gesture to avoid forced layout on every touchmove
       touchPaneRect = canvas.parentElement.getBoundingClientRect();
     }
@@ -267,8 +279,6 @@ function setupMobileInteractions(canvas) {
       }
 
       lastTouchDist = dist;
-      lastTouchMidX = midX;
-      lastTouchMidY = midY;
     }
   }, { passive: false });
 }

@@ -2,11 +2,15 @@
  * Modal component for displaying images
  */
 
+import { registerModal, openModal as openManagedModal, closeActiveModal } from './modal-manager.js';
+
 let modal = null;
 let modalImg = null;
 let closeBtn = null;
 let content = null;
 let onCloseHandler = null;
+let triggerElement = null;
+let unregisterModal = null;
 
 /**
  * Creates and initializes the modal element
@@ -24,6 +28,9 @@ function createModal() {
     'opacity-0 pointer-events-none',
     'transition-opacity duration-200',
   ].join(' ');
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-label', 'Image preview');
 
   // Modal content container - wraps image and close button
   content = document.createElement('div');
@@ -71,16 +78,14 @@ function createModal() {
     }
   });
 
-  // Close on escape key
-  document.addEventListener('keydown', handleKeydown);
-
   document.body.appendChild(modal);
-}
-
-function handleKeydown(e) {
-  if (e.key === 'Escape' && modal && !modal.classList.contains('pointer-events-none')) {
-    closeModal();
-  }
+  
+  // Register with modal manager
+  unregisterModal = registerModal('image-preview', {
+    onClose: closeModal,
+    storeTrigger: (el) => { triggerElement = el; },
+    getFocusableElements: () => modal?.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') || [],
+  });
 }
 
 /**
@@ -88,11 +93,14 @@ function handleKeydown(e) {
  * @param {string} src - Image source URL
  * @param {string} alt - Alt text for the image
  */
-export function openModal(src, alt = '') {
+export function openModal(src, alt = '', triggerEl = null) {
   createModal();
 
   modalImg.src = src;
   modalImg.alt = alt;
+  if (alt) {
+    modal.setAttribute('aria-label', alt);
+  }
 
   // Show modal
   modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -101,8 +109,13 @@ export function openModal(src, alt = '') {
   content.classList.remove('scale-95');
   content.classList.add('scale-100');
 
-  // Prevent body scroll
-  document.body.style.overflow = 'hidden';
+  // Register as active modal
+  openManagedModal('image-preview', triggerEl || document.activeElement);
+
+  // Move focus to close button
+  requestAnimationFrame(() => {
+    if (closeBtn) closeBtn.focus();
+  });
 }
 
 /**
@@ -118,13 +131,18 @@ export function closeModal() {
   content.classList.remove('scale-100');
   content.classList.add('scale-95');
 
-  // Restore body scroll
-  document.body.style.overflow = '';
+  // Return focus to trigger element
+  if (triggerElement && triggerElement.focus) {
+    triggerElement.focus();
+    triggerElement = null;
+  }
 
   if (onCloseHandler) {
     onCloseHandler();
     onCloseHandler = null;
   }
+  
+  closeActiveModal();
 }
 
 /**
@@ -146,5 +164,8 @@ export function destroyModal() {
     modalImg = null;
     closeBtn = null;
   }
-  document.removeEventListener('keydown', handleKeydown);
+  if (unregisterModal) {
+    unregisterModal();
+    unregisterModal = null;
+  }
 }

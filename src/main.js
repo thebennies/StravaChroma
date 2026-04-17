@@ -1,26 +1,43 @@
 import './styles.css';
 import { appState, setState, subscribe } from './state.js';
-import { PRESETS, COLORWAYS, LARGE_IMAGE_MEGAPIXELS, DEFAULT_MAP_PRESET, DEFAULT_DATA_PRESET, DEFAULT_LABEL_PRESET } from './constants.js';
+import { PRESETS, COLORWAYS, DEFAULT_MAP_PRESET, DEFAULT_DATA_PRESET, DEFAULT_LABEL_PRESET } from './constants.js';
 import { buildLayout } from './ui/layout.js';
 import { buildUploadPrompt, processFile, setupDragHighlight } from './ui/upload.js';
 import { buildDocsPage } from './ui/docs.js';
-import { buildCanvas, drawImageData, fitToCanvas, showCheckerboard, setCanvasBackground, setClassifyOverlay, setRenderSpinner, setDropShadow } from './ui/canvas.js';
+import { buildCanvas, drawImageData, fitToCanvas, showCheckerboard, setCanvasBackground, setClassifyOverlay, setRenderSpinner, setDropShadow, setCanvasLabel } from './ui/canvas.js';
 import { buildControls, buildActions } from './ui/controls.js';
 import { downloadExport } from './export.js';
 import { toast } from './ui/toast.js';
 import { hslToRgb } from './worker/utils.js';
 import { initErrorHandling } from './error-boundary.js';
 import { trackColorwaySelected, trackExport } from './analytics.js';
+import { pushColorHistory, canUndo, canRedo, undoColorState, redoColorState, resetColorHistory } from './ui/history.js';
+import { addCustomColorway, getCustomColorways } from './ui/controls-utils.js';
+import { buildSaveCustomModal } from './ui/save-custom-modal.js';
 
 // ── Initialize Global Error Handling ──────────────────────────────────────────
 
 initErrorHandling();
+
+// ── Filename sanitization helper ─────────────────────────────────────────────
+
+function sanitizeFilename(name) {
+  // Remove path components and control characters
+  // Keep only alphanumeric, spaces, hyphens, underscores, dots
+  return name
+    .replace(/\\/g, '/')
+    .split('/')
+    .pop()
+    .replace(/[<>",;:%|?*\x00-\x1F\x7F]/g, '')
+    .slice(0, 255); // Limit length
+}
 
 // ── Image session persistence (IndexedDB) ────────────────────────────────────
 
 const IDB_NAME  = 'stravachroma';
 const IDB_STORE = 'session';
 const IDB_KEY   = 'source-image';
+const IDB_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -31,12 +48,25 @@ function openDB() {
   });
 }
 
+async function clearImageSession() {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(IDB_KEY);
+  } catch (e) { console.warn('IDB clearImageSession:', e); }
+}
+
 async function saveImageSession(pixelData, width, height) {
   try {
     const db = await openDB();
     const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).put({ buffer: pixelData.buffer.slice(0), width, height }, IDB_KEY);
-  } catch { /* non-critical */ }
+    tx.objectStore(IDB_STORE).put({
+      buffer: pixelData.buffer.slice(0),
+      width,
+      height,
+      timestamp: Date.now()
+    }, IDB_KEY);
+  } catch (e) { console.warn('IDB saveImageSession:', e); }
 }
 
 async function loadImageSession() {
@@ -44,13 +74,29 @@ async function loadImageSession() {
     const db = await openDB();
     return new Promise((resolve) => {
       const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(IDB_KEY);
-      req.onsuccess = () => {
+      req.onsuccess = async () => {
         const d = req.result;
-        resolve(d ? { pixelData: new Uint8ClampedArray(d.buffer), width: d.width, height: d.height } : null);
+        if (!d) {
+          resolve(null);
+          return;
+        }
+        // Check TTL
+        const age = Date.now() - (d.timestamp || 0);
+        if (age > IDB_TTL_MS) {
+          // Session expired, clear it
+          await clearImageSession();
+          resolve(null);
+          return;
+        }
+        resolve({
+          pixelData: new Uint8ClampedArray(d.buffer),
+          width: d.width,
+          height: d.height
+        });
       };
       req.onerror = () => resolve(null);
     });
-  } catch { return null; }
+  } catch (e) { console.warn('IDB loadImageSession:', e); return null; }
 }
 
 // ── Resilient Worker Setup ────────────────────────────────────────────────────
@@ -62,6 +108,9 @@ let pendingClassification = null;
 
 let latestRequestId = 0;
 let pendingExport = null;
+let pendingExportTimeout = null;
+let exportAbortController = null;
+const EXPORT_CANCELLED = 'Export cancelled';
 
 function nextRequestId() {
   return ++latestRequestId;
@@ -108,6 +157,11 @@ function handleWorkerCrash() {
       isRendering: false, 
       isExporting: false 
     });
+    // Clear any pending export timeout to prevent memory leak and double-rejection
+    if (pendingExportTimeout) {
+      clearTimeout(pendingExportTimeout);
+      pendingExportTimeout = null;
+    }
     if (pendingExport) {
       const { reject } = pendingExport;
       pendingExport = null;
@@ -116,10 +170,39 @@ function handleWorkerCrash() {
   }
 }
 
+// ── Worker message validation ─────────────────────────────────────────────────
+
+function isValidClassifiedMsg(msg) {
+  return msg && 
+    typeof msg.requestId === 'number' &&
+    msg.mask instanceof Uint8Array &&
+    typeof msg.mapCount === 'number' &&
+    typeof msg.textCount === 'number';
+}
+
+function isValidRenderedMsg(msg) {
+  return msg && 
+    typeof msg.requestId === 'number' &&
+    msg.pixelData instanceof Uint8ClampedArray &&
+    typeof msg.width === 'number' &&
+    typeof msg.height === 'number';
+}
+
+function isValidErrorMsg(msg) {
+  return msg && 
+    typeof msg.message === 'string';
+}
+
 function handleWorkerMessage(e) {
   const msg = e.data;
 
   if (msg.type === 'classified') {
+    if (!isValidClassifiedMsg(msg)) {
+      console.error('Invalid classified message from worker:', msg);
+      toast.error('Processing error: invalid response');
+      setState({ isClassifying: false });
+      return;
+    }
     if (msg.requestId !== latestRequestId) return;
 
     pendingClassification = null;
@@ -136,6 +219,12 @@ function handleWorkerMessage(e) {
   }
 
   if (msg.type === 'rendered') {
+    if (!isValidRenderedMsg(msg)) {
+      console.error('Invalid rendered message from worker:', msg);
+      toast.error('Rendering error: invalid response');
+      setState({ isRendering: false });
+      return;
+    }
     if (msg.requestId !== latestRequestId) return;
 
     if (pendingExport) {
@@ -154,20 +243,29 @@ function handleWorkerMessage(e) {
 
     if (currentView === 'editor') {
       drawImageData(msg.pixelData, msg.width, msg.height);
-      fitToCanvas();
+      // Only fit canvas on first render to preserve user zoom/pan context
+      if (!hasFittedCanvas) {
+        fitToCanvas();
+        hasFittedCanvas = true;
+      }
     }
     return;
   }
 
   if (msg.type === 'error') {
-    console.error('Worker reported error:', msg.message);
-    toast.error('Processing failed. Try reloading the page.');
+    if (!isValidErrorMsg(msg)) {
+      console.error('Invalid error message from worker:', msg);
+      toast.error('Processing failed. Try reloading the page.');
+    } else {
+      console.error('Worker reported error:', msg.message);
+      toast.error('Processing failed. Try reloading the page.');
+    }
     setState({ isClassifying: false, isRendering: false, isExporting: false });
     pendingClassification = null;
     if (pendingExport) {
       const { reject } = pendingExport;
       pendingExport = null;
-      reject(new Error('Worker error: ' + msg.message));
+      reject(new Error('Worker error: ' + (msg.message || 'Unknown error')));
     }
   }
 }
@@ -218,11 +316,15 @@ let setRandomEnabled    = () => {};
 let setExporting           = () => {};
 let setExportEnabled       = () => {};
 let setActiveColorway      = () => {};
+let setUndoEnabled         = () => {};
+let setRedoEnabled         = () => {};
+let refreshColorways       = () => {};
 
 let prevHasImage         = false;
 let prevCheckerShow      = false;
 let prevCheckerDark      = false;
 let prevDropShadowEnabled = false;
+let hasFittedCanvas      = false;
 
 // ── State subscription → DOM updates ─────────────────────────────────────────
 
@@ -298,6 +400,14 @@ function handleFileLoad(file, pixelData, width, height) {
     isRendering:        false,
   });
 
+  // Reset color history for the new image
+  resetColorHistory();
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
+
+  // Update canvas label with sanitized filename for accessibility
+  setCanvasLabel(sanitizeFilename(file.name));
+
   requestClassification(pixelData, width, height);
   saveImageSession(pixelData, width, height);
   navigate('/editor');
@@ -307,13 +417,22 @@ function handleFileLoad(file, pixelData, width, height) {
 
 function cap(s) { return s[0].toUpperCase() + s.slice(1); }
 
+let sliderHistoryTimer = null;
+
 function handleSliderChange(layer, field, value) {
   const patch = {};
-  if (field === 'hue')      patch[`${layer}Hue`]      = value;
-  if (field === 'sat')      patch[`${layer}Sat`]      = value;
+  if (field === 'hue')       patch[`${layer}Hue`]       = value;
+  if (field === 'sat')       patch[`${layer}Sat`]       = value;
   if (field === 'luminance') patch[`${layer}Luminance`] = value;
   setState({ ...patch, [`selected${cap(layer)}Preset`]: -1, selectedColorway: -1 });
   requestRender(false);
+
+  // Debounce history push so rapid slider drags create one entry
+  clearTimeout(sliderHistoryTimer);
+  sliderHistoryTimer = setTimeout(() => {
+    pushColorHistory(appState);
+    updateUndoRedoButtons();
+  }, 350);
 }
 
 function handleSwap() {
@@ -325,13 +444,20 @@ function handleSwap() {
     selectedMapPreset: -1, selectedDataPreset: -1, selectedLabelPreset: -1,
     selectedColorway: -1,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
 }
 
 function handleColorway(idx) {
-  const colorway = COLORWAYS[idx];
+  const customs = getCustomColorways();
+  const allColorways = [...customs, ...COLORWAYS];
+  const colorway = allColorways[idx];
   if (!colorway) return;
-  trackColorwaySelected(colorway, idx);
+  // Only track analytics for built-in colorways
+  if (idx >= customs.length) {
+    trackColorwaySelected(colorway, idx - customs.length);
+  }
   setState({
     mapHue:   colorway.map.hue,   mapSat:   colorway.map.sat,   mapLuminance:   colorway.map.luminance,
     dataHue:  colorway.data.hue,  dataSat:  colorway.data.sat,  dataLuminance:  colorway.data.luminance,
@@ -339,6 +465,8 @@ function handleColorway(idx) {
     selectedMapPreset: -1, selectedDataPreset: -1, selectedLabelPreset: -1,
     selectedColorway: idx,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
 }
 
@@ -350,7 +478,10 @@ function handlePresetChange(layer, presetIndex) {
     [`${layer}Sat`]:                  preset.sat,
     [`${layer}Luminance`]:            preset.luminance,
     [`selected${cap(layer)}Preset`]:  presetIndex,
+    selectedColorway: -1,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
 }
 
@@ -365,15 +496,26 @@ function handleDropShadowChange(enabled) {
   setState({ dropShadowEnabled: enabled });
 }
 
+function handleGradientChange(enabled) {
+  setState({ gradientEnabled: enabled });
+  requestRender(false);
+}
+
+function handleLogoChange(enabled) {
+  setState({ showLogo: enabled });
+}
+
 // ── Render request ────────────────────────────────────────────────────────────
 
 function buildSliders() {
   const { mapHue, mapSat, mapLuminance,
           dataHue, dataSat, dataLuminance,
-          labelHue, labelSat, labelLuminance } = appState;
+          labelHue, labelSat, labelLuminance,
+          gradientEnabled } = appState;
   return { mapHue, mapSat, mapLuminance,
            dataHue, dataSat, dataLuminance,
-           labelHue, labelSat, labelLuminance };
+           labelHue, labelSat, labelLuminance,
+           gradientEnabled };
 }
 
 function requestRender(isExport) {
@@ -397,6 +539,7 @@ function requestRender(isExport) {
         height: appState.sourceHeight,
         sliders,
         downscale: !isExport,
+        gradientEnabled: sliders.gradientEnabled,
       },
       [pixelCopy.buffer, maskCopy.buffer]
     );
@@ -409,12 +552,39 @@ function requestRender(isExport) {
 
 // ── Export handler ────────────────────────────────────────────────────────────
 
+function handleCancelExport() {
+  if (!appState.isExporting) return;
+  
+  // Abort the current export
+  exportAbortController?.abort();
+  
+  // Clean up pending export
+  if (pendingExport) {
+    pendingExport.reject(new Error(EXPORT_CANCELLED));
+    pendingExport = null;
+  }
+  
+  // Clear timeout
+  if (pendingExportTimeout) {
+    clearTimeout(pendingExportTimeout);
+    pendingExportTimeout = null;
+  }
+  
+  // Reset state
+  setState({ isExporting: false, isRendering: false });
+  toast.info('Export cancelled');
+}
+
 async function handleExport() {
   if (!appState.sourcePixelData || !appState.classificationMask) {
     toast.info('Load an image first.');
     return;
   }
   if (appState.isExporting) return;
+
+  // Create new abort controller for this export
+  exportAbortController = new AbortController();
+  const abortSignal = exportAbortController.signal;
 
   setState({ isExporting: true });
 
@@ -439,6 +609,7 @@ async function handleExport() {
             height: appState.sourceHeight,
             sliders,
             downscale: false,
+            gradientEnabled: sliders.gradientEnabled,
           },
           [pixelCopy.buffer, maskCopy.buffer]
         );
@@ -446,8 +617,18 @@ async function handleExport() {
         reject(err);
       }
       
+      // Listen for abort signal
+      abortSignal.addEventListener('abort', () => {
+        if (pendingExportTimeout) {
+          clearTimeout(pendingExportTimeout);
+          pendingExportTimeout = null;
+        }
+        reject(new Error(EXPORT_CANCELLED));
+      });
+      
       // Timeout fallback in case worker hangs
-      setTimeout(() => {
+      pendingExportTimeout = setTimeout(() => {
+        pendingExportTimeout = null;
         if (pendingExport) {
           pendingExport = null;
           reject(new Error('Export timed out'));
@@ -455,15 +636,26 @@ async function handleExport() {
       }, 60000); // 60 second timeout
     });
   } catch (err) {
+    if (err.message === EXPORT_CANCELLED) {
+      // User cancelled, already handled
+      return;
+    }
     console.error('Export failed:', err);
     toast.error('Export failed. Please try again.');
     setState({ isExporting: false, isRendering: false });
     return;
+  } finally {
+    // Clear timeout on success or failure
+    if (pendingExportTimeout) {
+      clearTimeout(pendingExportTimeout);
+      pendingExportTimeout = null;
+    }
+    exportAbortController = null;
   }
 
   try {
     trackExport(appState, COLORWAYS);
-    await downloadExport(result.pixelData, result.width, result.height, appState.dropShadowEnabled);
+    await downloadExport(result.pixelData, result.width, result.height, appState.dropShadowEnabled, appState.showLogo);
   } catch (err) {
     console.error('Download failed:', err);
     toast.error('Failed to save image. Please try again.');
@@ -488,7 +680,10 @@ function handleReset() {
     labelSat:            PRESETS[DEFAULT_LABEL_PRESET].sat,
     labelLuminance:      PRESETS[DEFAULT_LABEL_PRESET].luminance,
     selectedLabelPreset: DEFAULT_LABEL_PRESET,
+    selectedColorway:    -1,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
 }
 
@@ -501,8 +696,58 @@ function handleRandom() {
     mapHue:   randomHue(), mapSat: 1.0, mapLuminance: 0.5,   selectedMapPreset:   -1,
     dataHue:  randomHue(), dataSat: 1.0, dataLuminance: 0.5,  selectedDataPreset:  -1,
     labelHue: randomHue(), labelSat: 1.0, labelLuminance: 0.5, selectedLabelPreset: -1,
+    selectedColorway: -1,
   });
+  pushColorHistory(appState);
+  updateUndoRedoButtons();
   requestRender(false);
+}
+
+// ── Undo / Redo ───────────────────────────────────────────────────────────────
+
+function updateUndoRedoButtons() {
+  setUndoEnabled(canUndo());
+  setRedoEnabled(canRedo());
+}
+
+function handleUndo() {
+  const snap = undoColorState();
+  if (!snap) return;
+  setState(snap);
+  requestRender(false);
+  updateUndoRedoButtons();
+}
+
+function handleRedo() {
+  const snap = redoColorState();
+  if (!snap) return;
+  setState(snap);
+  requestRender(false);
+  updateUndoRedoButtons();
+}
+
+// ── Save Custom Colorway ──────────────────────────────────────────────────────
+
+function handleSaveCustom() {
+  const {
+    mapHue, mapSat, mapLuminance,
+    dataHue, dataSat, dataLuminance,
+    labelHue, labelSat, labelLuminance,
+  } = appState;
+
+  const overlay = buildSaveCustomModal(
+    { mapHue, mapSat, mapLuminance, dataHue, dataSat, dataLuminance, labelHue, labelSat, labelLuminance },
+    (name, colorway) => {
+      const success = addCustomColorway(colorway);
+      if (!success) {
+        toast.error('Maximum 50 custom colorways reached.');
+        return;
+      }
+      refreshColorways();
+      toast.success(`Saved \u201c${name}\u201d`);
+    }
+  );
+  document.body.appendChild(overlay);
 }
 
 // ── Views ─────────────────────────────────────────────────────────────────────
@@ -511,7 +756,8 @@ function setupLanding() {
   currentView = 'landing';
   layout = null;
   updateMapControls = updateDataControls = updateLabelControls = () => {};
-  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = () => {};
+  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = setUndoEnabled = setRedoEnabled = () => {};
+  refreshColorways = () => {};
 
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -579,6 +825,7 @@ function setupEditor() {
   prevCheckerShow = false;
   prevCheckerDark = false;
   prevDropShadowEnabled = false;
+  hasFittedCanvas = false;
 
   const controlsResult = buildControls(
     layout.controlsContainer,
@@ -586,16 +833,28 @@ function setupEditor() {
       onRandom: handleRandom, onReset: handleReset, onSwap: handleSwap, onExport: handleExport, onColorway: handleColorway,
       onBackgroundChange: handleBackgroundChange,
       onDropShadowChange: handleDropShadowChange,
+      onLogoChange: handleLogoChange,
       initialBackground: appState.selectedBackground,
       initialCustomImage: appState.customImage,
       initialDropShadow: appState.dropShadowEnabled,
+      onGradientChange: handleGradientChange,
+      initialGradient: appState.gradientEnabled,
+      initialLogo: appState.showLogo,
+      onUndo: handleUndo,
+      onRedo: handleRedo,
+      onSaveCustom: handleSaveCustom,
+      onDeleteCustom: () => setState({ selectedColorway: -1 }),
       signal }
   );
   ({ updateMapControls, updateDataControls, updateLabelControls,
-     setEnabled: setControlsEnabled, setRandomEnabled, setActiveColorway } = controlsResult);
+     setEnabled: setControlsEnabled, setRandomEnabled, setActiveColorway,
+     setUndoEnabled, setRedoEnabled, refreshColorways } = controlsResult);
+
+  // Sync undo/redo button state with current history
+  updateUndoRedoButtons();
 
   if (layout.actions) {
-    ({ setExporting, setExportEnabled } = buildActions(layout.actions, { onExport: handleExport, signal }));
+    ({ setExporting, setExportEnabled } = buildActions(layout.actions, { onExport: handleExport, onCancelExport: handleCancelExport, signal }));
   } else {
     ({ setExporting, setExportEnabled } = controlsResult);
   }
@@ -618,7 +877,8 @@ function setupDocs() {
   currentView = 'docs';
   layout = null;
   updateMapControls = updateDataControls = updateLabelControls = () => {};
-  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = () => {};
+  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = setUndoEnabled = setRedoEnabled = () => {};
+  refreshColorways = () => {};
 
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -632,7 +892,8 @@ function setup404() {
   currentView = '404';
   layout = null;
   updateMapControls = updateDataControls = updateLabelControls = () => {};
-  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = () => {};
+  setControlsEnabled = setRandomEnabled = setExporting = setExportEnabled = setActiveColorway = setUndoEnabled = setRedoEnabled = () => {};
+  refreshColorways = () => {};
 
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -780,6 +1041,9 @@ function hasUnsavedChanges() {
         isClassifying:      true,
         isRendering:        false,
       });
+      // Start fresh history for the restored session
+      resetColorHistory();
+      pushColorHistory(appState);
       requestClassification(saved.pixelData, saved.width, saved.height);
     } else {
       // No saved image — fall back to landing.

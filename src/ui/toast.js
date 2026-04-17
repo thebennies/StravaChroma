@@ -35,10 +35,10 @@ function showToast(message, type = 'info') {
   }
 
   const colorMap = {
-    error:   { bg: 'bg-[#FF3B30]/10', border: 'border-[#FF3B30]/30', text: 'text-[#FF6B6B]', role: 'alert' },
-    warning: { bg: 'bg-[#FF9500]/10', border: 'border-[#FF9500]/30', text: 'text-[#FFB347]', role: 'status' },
-    info:    { bg: 'bg-primary/10',    border: 'border-primary/30',    text: 'text-primary', role: 'status' },
-    success: { bg: 'bg-[#34C759]/10',  border: 'border-[#34C759]/30',  text: 'text-[#30D158]', role: 'status' },
+    error:   { bg: 'bg-[#FF3B30]/10', border: 'border-[#FF3B30]/30', text: 'text-[#FF6B6B]', role: 'alert', icon: '⚠️' },
+    warning: { bg: 'bg-[#FF9500]/10', border: 'border-[#FF9500]/30', text: 'text-[#FFB347]', role: 'status', icon: '⚡' },
+    info:    { bg: 'bg-primary/10',    border: 'border-primary/30',    text: 'text-primary', role: 'status', icon: 'ℹ️' },
+    success: { bg: 'bg-[#34C759]/10',  border: 'border-[#34C759]/30',  text: 'text-[#30D158]', role: 'status', icon: '✓' },
   };
 
   const config = colorMap[type] || colorMap.info;
@@ -54,8 +54,18 @@ function showToast(message, type = 'info') {
     'cursor-pointer select-none',
     'shadow-lg shadow-black/20',
     'transition-all duration-200 ease-out',
+    'flex items-center gap-2',
   ].join(' ');
-  el.textContent = message;
+  
+  // Security: Use textContent instead of innerHTML to prevent XSS
+  const iconSpan = document.createElement('span');
+  iconSpan.setAttribute('aria-hidden', 'true');
+  iconSpan.textContent = config.icon;
+  
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = message;
+  
+  el.append(iconSpan, msgSpan);
   
   // Accessibility: role="alert" for errors (interruptive), role="status" for info/warnings
   el.setAttribute('role', config.role);
@@ -77,7 +87,10 @@ function showToast(message, type = 'info') {
     });
   });
 
-  setTimeout(() => removeToast(el), AUTO_DISMISS_MS);
+  // Don't auto-dismiss error toasts - they require user action (WCAG 3.3.1)
+  if (type !== 'error') {
+    setTimeout(() => removeToast(el), AUTO_DISMISS_MS);
+  }
 }
 
 export const toast = {

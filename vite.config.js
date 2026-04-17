@@ -16,9 +16,15 @@ export default defineConfig({
     target: 'es2022',
     sourcemap: true,
   },
-  base: '/StravaChroma/',
+  base: process.env.GITHUB_ACTIONS ? '/StravaChroma/' : '/',
   server: {
+    host: true,
+    port: 5173,
     historyApiFallback: true,
+  },
+  preview: {
+    host: true,
+    port: 4173,
   },
   test: {
     environment: 'node',

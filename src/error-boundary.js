@@ -126,23 +126,31 @@ function showErrorRecoveryUI(message) {
 
 /**
  * Check if we're in a memory-constrained environment
+ * 
+ * Memory thresholds:
+ * - 500MB warning: Large images may cause performance issues on devices with 4GB RAM
+ *   500MB ≈ 12,000 x 12,000 pixels (144MP) with RGBA * 3 buffers
+ * - 2000MB hard limit: Prevents OOM crashes on most devices
+ *   2000MB ≈ 24,000 x 24,000 pixels (576MP) with RGBA * 3 buffers
+ *   This is ~50% of 4GB RAM, leaving room for OS and browser overhead
  */
-export function checkMemoryConstraints(fileSizeMB, width, height) {
+export function checkMemoryConstraints(width, height) {
   const pixelCount = width * height;
-  const estimatedMemoryMB = (pixelCount * 4 * 3) / (1024 * 1024); // RGBA * 3 buffers
+  // RGBA = 4 bytes per pixel, 3 buffers (source, mask, output) = 12 bytes per pixel total
+  const estimatedMemoryMB = (pixelCount * 4 * 3) / (1024 * 1024);
   
-  // Warn if estimated memory usage is high
-  if (estimatedMemoryMB > 500) {
-    toast.warning(`Large image may use ${Math.round(estimatedMemoryMB)}MB of memory. Processing may be slow.`);
-    return { allowed: true, warning: true };
-  }
-  
-  // Hard limit at 2GB estimated
+  // Check hard limit FIRST before any warnings
   if (estimatedMemoryMB > 2000) {
     return { 
       allowed: false, 
       error: `Image too large (would need ~${Math.round(estimatedMemoryMB)}MB). Maximum supported is ~2000MB.` 
     };
+  }
+  
+  // Warn if estimated memory usage is high (but still under hard limit)
+  if (estimatedMemoryMB > 500) {
+    toast.warning(`Large image may use ${Math.round(estimatedMemoryMB)}MB of memory. Processing may be slow.`);
+    return { allowed: true, warning: true };
   }
   
   return { allowed: true, warning: false };

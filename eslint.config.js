@@ -19,9 +19,11 @@ export default [
         Worker: 'readonly',
         requestAnimationFrame: 'readonly',
         setTimeout: 'readonly',
+        clearTimeout: 'readonly',
         clearInterval: 'readonly',
         setInterval: 'readonly',
         console: 'readonly',
+        __APP_VERSION__: 'readonly',
       },
     },
     rules: {
