@@ -193,6 +193,14 @@ export function buildDocsPage({ onClose } = {}) {
   // Changelog Section
   content.appendChild(buildSection('Changelog', 'changelog', ICONS.changelog, [
     buildSubsection(`v${APP_VERSION}`, `
+      • Undo / Redo — step back and forward through color history
+      • Custom colorways — save and reuse your own palettes
+      • New brand groups: Adidas ADIZERO (14), Asics *Blast (21), Hoka Clifton (18)
+      • Preset modal selector replaces dropdown
+      • Gradient and export logo experimental effects
+      • Mobile Tools panel (renamed from Actions); taller controls panel
+    `),
+    buildSubsection('v2026.04.1', `
       • CalVer versioning — dates instead of arbitrary numbers
       • Colorway search — Cmd/Ctrl+K to find palettes fast
       • Colorway favorites — heart your go-to palettes
